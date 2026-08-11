@@ -1,0 +1,13 @@
+{
+    "manifest_version": 3,
+    "name": "Link Sentinel",
+    "version": "1.0",
+    "description": "Scans links on the current webpage for potential threats.",
+    "action": {
+        "default_popup": "src/popup/popup.html"
+    },
+    "permissions": [
+        "activeTab",
+        "scripting"
+    ]
+}
