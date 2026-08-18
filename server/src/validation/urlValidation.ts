@@ -13,12 +13,10 @@ export const isValidUrlArray = (urls: unknown): urls is string[] => {
             const parsedUrl = new URL(url);
 
             if (
-                parsedUrl.protocol !== "http:" &&
-                parsedUrl.protocol !== "https:"
-            ) {
-                return false;
-            }
-
+                parsedUrl.protocol !== "http:" && parsedUrl.protocol !== "https:") {
+                    return false;
+                }
+                
             return true;
         }
         catch {
