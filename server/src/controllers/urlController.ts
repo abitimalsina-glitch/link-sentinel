@@ -1,5 +1,6 @@
 import {Request, Response} from 'express';
 import { isValidUrlArray } from '../validation/urlValidation';
+import { scanUrlsWithApi } from "../services/phishing-api.js";
 
 export const scanUrls = async (req: Request, res: Response) => {
     const { urls } = req.body;
@@ -11,4 +12,9 @@ export const scanUrls = async (req: Request, res: Response) => {
         
         return;
     }
+    const results = await scanUrlsWithApi(urls);
+
+    res.json({
+        results
+    });
 }

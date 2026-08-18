@@ -1,6 +1,6 @@
 import "dotenv/config";
 
-const API_KEY = process.env.GOOGLE_SAFE_BROWSING_API_KEY;
+const API_KEY = process.env.SAFE_BROWSING_API_KEY;
 
 if (!API_KEY) {
     throw new Error("API Key not found");
