@@ -26,32 +26,32 @@ Backend (API)
 
 ```
 .
-├── .gitignore
-├── LICENSE
-├── README.md
-├── extension
-│   ├── manifest.json
-│   ├── package-lock.json
-│   ├── package.json
-│   ├── tsconfig.json
+├── .gitignore                 # Files Git should ignore
+├── LICENSE                    # Project license
+├── README.md                  # Project documentation
+├── extension                  # Browser extension
+│   ├── manifest.json          # Extension configuration
+│   ├── package-lock.json      # Locked dependency versions
+│   ├── package.json           # Extension dependencies and scripts
+│   ├── tsconfig.json          # TypeScript configuration
 │   └── src
-│       ├── api.ts
-│       ├── scanner.ts
-│       ├── url.ts
-│       └── popup
-│           ├── popup.css
-│           ├── popup.html
-│           └── popup.ts
-└── server
-    ├── package-lock.json
-    ├── package.json
-    ├── tsconfig.json
+│       ├── api.ts             # Communicates with the backend API
+│       ├── scanner.ts         # Scans and processes page links
+│       ├── url.ts             # URL validation and handling
+│       └── popup              # Extension popup UI
+│           ├── popup.css      # Popup styling
+│           ├── popup.html     # Popup structure
+│           └── popup.ts       # Popup logic
+└── server                     # Backend API
+    ├── package-lock.json      # Locked dependency versions
+    ├── package.json           # Server dependencies and scripts
+    ├── tsconfig.json          # TypeScript configuration
     └── src
-        ├── app.ts
-        ├── server.ts
+        ├── app.ts             # Express application setup
+        ├── server.ts          # Starts the server
         ├── controllers
-        │   └── urlController.ts
-        ├── routes
-        ├── services
-        └── validation
+        │   └── urlController.ts # Handles URL scan requests
+        ├── routes              # API endpoint definitions
+        ├── services            # Business logic and external services
+        └── validation          # Request and input validation
 ```
