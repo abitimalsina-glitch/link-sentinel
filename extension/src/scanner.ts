@@ -1,6 +1,10 @@
+import { createUrlQueue } from "./queue.js";
+
 const scannedUrls = new Set<string>();
 
-export const startScanner = (onUrlDetected: (url: string) => void) => {
+export const startScanner = (onBatchReady: (urls: string[]) => void) => {
+    const queue = createUrlQueue(onBatchReady);
+
     const observer = new IntersectionObserver((entries) => {
         for (const entry of entries) {
             if (!entry.isIntersecting) {
@@ -15,7 +19,8 @@ export const startScanner = (onUrlDetected: (url: string) => void) => {
             }
 
             scannedUrls.add(url);
-            onUrlDetected(url);
+
+            queue.add(url);
         }
     });
 
