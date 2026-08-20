@@ -1,4 +1,5 @@
 import { createUrlQueue } from "./queue.js";
+import { isHttpUrl } from "./url.js";
 
 const scannedUrls = new Set<string>();
 
@@ -13,6 +14,10 @@ export const startScanner = (onBatchReady: (urls: string[]) => void) => {
 
             const link = entry.target as HTMLAnchorElement;
             const url = link.href;
+            
+            if (!isHttpUrl(url)) {
+                continue;
+            }
 
             if (scannedUrls.has(url)) {
                 continue;
