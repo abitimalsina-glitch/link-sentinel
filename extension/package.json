@@ -12,6 +12,10 @@
   "type": "commonjs",
   "devDependencies": {
     "@types/firefox": "^0.0.34",
-    "typescript": "^7.0.2"
+    "typescript": "^7.0.2",
+    "vite": "^8.2.2"
+  },
+  "dependencies": {
+    "dotenv": "^17.4.2"
   }
 }
