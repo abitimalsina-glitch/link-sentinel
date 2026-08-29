@@ -4,23 +4,35 @@ Link-Sentinel is a browser extension built with TypeScript that detects and anal
 
 ## Features
 
-- Detect links that become visible in the browser viewport (instead of scanning every URL on the page)
+- Detect links via mouse hover (instead of scanning every URL on the page)
 - Analyze URLs for suspicious patterns and show an easy-to-read security status
 - Avoid duplicate scans by tracking already-checked URLs
 - TypeScript across frontend (extension) and backend (API)
 
-## Architecture
+## How it Works
 
-Frontend (Browser extension)
-- TypeScript
-- Scans links that become visible in the browser viewport
-- Uses IntersectionObserver to detect visible links (planned/in progress)
-- Tracks scanned URLs to avoid duplicate analysis
+Link-Sentinel operates directly within the browser using a hover-based mechanism:
 
-Backend (API)
-- Node.js + Express
-- TypeScript
-- Provides URL analysis endpoints for the extension to query
+1. **Hover Detection:** When you mouse over a link, the extension detects the hovered URL using event delegation.
+2. **Debounce & Caching:** To prevent spamming requests, it waits 300ms before triggering a scan and checks an in-memory cache to avoid redundant checks.
+3. **Analysis:** The hovered URL is sent to the local Node.js backend.
+4. **Safe Browsing Lookup:** The backend queries the Google Safe Browsing API.
+5. **Real-time Feedback:** A non-intrusive tooltip appears near the cursor displaying the safety status (`SAFE`, `MALICIOUS`, etc.).
+
+## Project Structure
+
+The repository is divided into two parts:
+
+### 1. Extension (`/extension`)
+The browser extension that injects the scanner script.
+
+- `src/`
+  - `content.ts`          # Injected into webpages, handles cache, UI, and scanning logic
+  - `scanner.ts`          # Tracks mouseover/mouseout events and implements debounce
+  - `api.ts`              # Communicates with the local backend
+  - `url.ts`              # Utilities for parsing and filtering URLs
+  - `popup/`              # Extension popup UI (Not currently used for hover MVP)
+- `dist/`                 # Compiled JavaScript outputs
 
 ## Repository folder tree
 
@@ -36,14 +48,13 @@ Link-Sentinel
 │   ├── tsconfig.json          # TypeScript configuration
 │   └── src
 │       ├── api.ts             # Communicates with the backend API
-│       ├── queue.ts           # Queues and batches URLs for scanning
-│       ├── scanner.ts         # Detects visible links on the webpage
+│       ├── scanner.ts         # Tracks mouseover/mouseout events and implements debounce
 │       ├── url.ts             # URL validation and handling
 │       └── popup              # Extension popup UI
 │           ├── popup.css      # Popup styling
 │           ├── popup.html     # Popup structure
 │           └── popup.ts       # Popup logic
-└── server                    # Backend API
+└── server                     # Backend API
     ├── package-lock.json      # Locked dependency versions
     ├── package.json           # Server dependencies and scripts
     ├── tsconfig.json          # TypeScript configuration

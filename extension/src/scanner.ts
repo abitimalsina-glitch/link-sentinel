@@ -1,37 +1,54 @@
-import { createUrlQueue } from "./queue.js";
-import { isHttpUrl } from "./url.js";
+import { isHttpUrl } from "./url";
 
-const scannedUrls = new Set<string>();
+type ScanCallback = (url: string, anchor: HTMLAnchorElement) => void;
+type LeaveCallback = (anchor: HTMLAnchorElement) => void;
 
-export const startScanner = (onBatchReady: (urls: string[]) => void) => {
-    const queue = createUrlQueue(onBatchReady);
+export const startHoverScanner = (onScan: ScanCallback, onLeave: LeaveCallback) => {
+    let hoverTimeout: ReturnType<typeof setTimeout> | null = null;
+    let currentAnchor: HTMLAnchorElement | null = null;
 
-    const observer = new IntersectionObserver((entries) => {
-        for (const entry of entries) {
-            if (!entry.isIntersecting) {
-                continue;
-            }
+    document.addEventListener("mouseover", (event) => {
+        const target = event.target as HTMLElement;
+        const anchor = target.closest("a");
 
-            const link = entry.target as HTMLAnchorElement;
-            const url = link.href;
-            
-            if (!isHttpUrl(url)) {
-                continue;
-            }
+        if (!anchor) return;
 
-            if (scannedUrls.has(url)) {
-                continue;
-            }
+        const url = anchor.href;
+        if (!isHttpUrl(url)) return;
 
-            scannedUrls.add(url);
+        if (currentAnchor === anchor) return;
 
-            queue.add(url);
+        currentAnchor = anchor;
+        
+        if (hoverTimeout) {
+            clearTimeout(hoverTimeout);
         }
+
+        hoverTimeout = setTimeout(() => {
+            if (currentAnchor === anchor) {
+                onScan(url, anchor);
+            }
+        }, 300);
     });
 
-    const links = document.querySelectorAll<HTMLAnchorElement>("a[href]");
+    document.addEventListener("mouseout", (event) => {
+        const target = event.target as HTMLElement;
+        const anchor = target.closest("a");
 
-    for (const link of links) {
-        observer.observe(link);
-    }
+        if (!anchor) return;
+
+        const relatedTarget = event.relatedTarget as Node | null;
+        if (relatedTarget && anchor.contains(relatedTarget)) {
+            return;
+        }
+
+        if (currentAnchor === anchor) {
+            if (hoverTimeout) {
+                clearTimeout(hoverTimeout);
+                hoverTimeout = null;
+            }
+            onLeave(anchor);
+            currentAnchor = null;
+        }
+    });
 };

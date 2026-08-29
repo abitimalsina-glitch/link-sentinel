@@ -1,5 +1,5 @@
 import {Request, Response} from 'express';
-import { isValidUrlArray } from '../validation/urlValidation';
+import { isValidUrlArray } from '../validation/urlValidation.js';
 import { scanUrlsWithApi } from "../services/phishing-api.js";
 
 export const scanUrls = async (req: Request, res: Response) => {

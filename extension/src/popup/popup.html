@@ -1,39 +1,27 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-   <meta charset="UTF-8">
-   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-   <link rel="stylesheet" href="popup.css">
-   <title>Link Sentinel</title>
+    <meta charset="utf-8">
+    <title>Link-Sentinel</title>
+    <link rel="stylesheet" href="popup.css">
 </head>
 <body>
+    <div class="header">Link-Sentinel</div>
+    
+    <div class="section-title">Recent Scan</div>
+    <div class="divider"></div>
+    
+    <div id="url-container">
+        <div class="label">URL:</div>
+        <div id="scan-url">No scans yet</div>
+    </div>
+    
+    <div id="status-container">
+        <div class="label">Status:</div>
+        <div id="scan-status">-</div>
+    </div>
 
-   <header>
-       <h2 id="title">Link Sentinel</h2>
-   </header>
-
-   <main>
-       <section id="scan-section">
-           <h3>Page Scan</h3>
-           <p id="links-found">0 links found</p>
-           <button id="scan-button" type="button">Scan Page</button>
-       </section>
-
-       <section id="results-section">
-           <h3>Results</h3>
-           <p id="urls-scanned">0 URLs scanned</p>
-
-           <div class="result-summary">
-               <p> 🟢 <span id="safe-count">0</span> No known threat</p>
-               <p>🟡 <span id="suspicious-count">0</span> Suspicious</p>
-               <p>🔴 <span id="malicious-count">0</span> Malicious</p>
-           </div>
-           
-           <div id="results-list">
-           </div>
-       </section>
-   </main>
-
-   <script type="module" src="popup.ts"></script>
+    <!-- The module script relies on ES modules, which are natively supported in popup pages -->
+    <script type="module" src="../../dist/popup/popup.js"></script>
 </body>
 </html>

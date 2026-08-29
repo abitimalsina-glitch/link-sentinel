@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { scanUrls } from '../controllers/urlController';
+import { scanUrls } from '../controllers/urlController.js';
 
 const router = Router();
 

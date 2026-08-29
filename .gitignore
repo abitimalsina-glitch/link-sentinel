@@ -11,3 +11,6 @@ build/
 
 # OS files
 .DS_Store
+
+# Progress file
+LINK_SENTINEL_PROGRESS.md

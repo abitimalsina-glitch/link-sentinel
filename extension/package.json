@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "build": "npx tsc --project tsconfig.json && vite build",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -11,6 +12,7 @@
   "license": "ISC",
   "type": "commonjs",
   "devDependencies": {
+    "@types/chrome": "^0.2.7",
     "@types/firefox": "^0.0.34",
     "typescript": "^7.0.2",
     "vite": "^8.2.2"
