@@ -1,5 +1,4 @@
 import { startHoverScanner } from './scanner.js';
-// import { scanUrl } from './api.js';
 
 console.log("[Link-Sentinel] Content script loaded");
 
@@ -71,7 +70,7 @@ const hideTooltip = () => {
 const renderTooltip = (state: "CHECKING" | "SAFE" | "MALICIOUS" | "ERROR", details?: any) => {
     if (!tooltipContent) return;
     
-    tooltipContent.innerHTML = ''; // Clear previous content safely
+    tooltipContent.innerHTML = '';
     
     const header = document.createElement('div');
     header.className = 'header';
@@ -130,10 +129,8 @@ startHoverScanner(async (url: string, anchor: HTMLAnchorElement) => {
     createTooltip();
     updateTooltipPosition(anchor);
     
-    // Test the Hover UI Without the Backend
     renderTooltip("CHECKING");
     
-    // Mock the backend delay
     setTimeout(() => {
         if (url !== currentHoveredUrl) return;
         renderTooltip("SAFE");

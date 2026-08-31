@@ -47,14 +47,6 @@ export const scanUrlsWithApi = async (urls: string[]) => {
 
   const buffer = Buffer.from(await response.arrayBuffer());
 
-  /*
-   * v5 returns a protobuf response.
-   *
-   * We define the fields we need from the SearchResponse:
-   * threats = repeated Threat
-   * cache_duration = Duration
-   */
-
   const Threat = new protobuf.Type("Threat")
     .add(new protobuf.Field("threat_type", 1, "string"))
     .add(new protobuf.Field("threat", 2, "string"));

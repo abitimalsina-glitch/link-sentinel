@@ -6,7 +6,6 @@ document.addEventListener('DOMContentLoaded', () => {
         chrome.storage.local.get(['lastScan'], (result: any) => {
             const scan = result.lastScan;
             if (scan && urlEl && statusEl) {
-                // Truncate long URLs for display
                 let displayUrl = scan.url;
                 if (displayUrl.length > 50) {
                     displayUrl = displayUrl.substring(0, 47) + '...';

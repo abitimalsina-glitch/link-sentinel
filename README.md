@@ -19,20 +19,10 @@ Link-Sentinel operates directly within the browser using a hover-based mechanism
 4. **Safe Browsing Lookup:** The backend queries the Google Safe Browsing API.
 5. **Real-time Feedback:** A non-intrusive tooltip appears near the cursor displaying the safety status (`SAFE`, `MALICIOUS`, etc.).
 
-## Project Structure
+## Building the Project
 
-The repository is divided into two parts:
-
-### 1. Extension (`/extension`)
-The browser extension that injects the scanner script.
-
-- `src/`
-  - `content.ts`          # Injected into webpages, handles cache, UI, and scanning logic
-  - `scanner.ts`          # Tracks mouseover/mouseout events and implements debounce
-  - `api.ts`              # Communicates with the local backend
-  - `url.ts`              # Utilities for parsing and filtering URLs
-  - `popup/`              # Extension popup UI (Not currently used for hover MVP)
-- `dist/`                 # Compiled JavaScript outputs
+1. **Extension:** Navigate to `extension/` and run `npm install` then `npm run build`. This bundles the content script using Vite and transpiles the popup using `tsc`.
+2. **Server:** Navigate to `server/` and run `npm install` then `npm run build`. This transpiles the Express backend to `dist/`.
 
 ## Repository folder tree
 
@@ -70,3 +60,6 @@ Link-Sentinel
         └── validation
             └── urlValidation.ts # Validates incoming URL data
 ```
+
+## Status
+Work In Progress
