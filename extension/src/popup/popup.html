@@ -4,21 +4,62 @@
     <meta charset="utf-8">
     <title>Link-Sentinel</title>
     <link rel="stylesheet" href="popup.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="header">Link-Sentinel</div>
-    
-    <div class="section-title">Recent Scan</div>
-    <div class="divider"></div>
-    
-    <div id="url-container">
-        <div class="label">URL:</div>
-        <div id="scan-url">No scans yet</div>
-    </div>
-    
-    <div id="status-container">
-        <div class="label">Status:</div>
-        <div id="scan-status">-</div>
+    <div class="app-container">
+        <header class="header">
+            <div class="logo-area">
+                <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+                <span class="logo-text">Link-Sentinel</span>
+            </div>
+        </header>
+
+        <section class="overall-status-card" id="overall-status-card">
+            <div class="overall-label">Overall Status</div>
+            <div class="overall-value" id="overall-status-text">Scanning...</div>
+        </section>
+
+        <div class="modules-container">
+            <!-- URL Reputation -->
+            <div class="module-card">
+                <div class="module-header">
+                    <span class="module-title">URL Reputation</span>
+                    <span class="module-icon" id="url-rep-icon">⟳</span>
+                </div>
+                <div class="module-status" id="url-rep-status">Scanning...</div>
+                <div class="module-details" id="scan-url" title=""></div>
+            </div>
+
+            <!-- Phishing Detection -->
+            <div class="module-card inactive">
+                <div class="module-header">
+                    <span class="module-title">Phishing Detection</span>
+                    <span class="module-icon">○</span>
+                </div>
+                <div class="module-status">Not analyzed yet</div>
+            </div>
+
+            <!-- Domain Analysis -->
+            <div class="module-card inactive">
+                <div class="module-header">
+                    <span class="module-title">Domain Analysis</span>
+                    <span class="module-icon">○</span>
+                </div>
+                <div class="module-status">Not analyzed yet</div>
+            </div>
+
+            <!-- Page Analysis -->
+            <div class="module-card inactive">
+                <div class="module-header">
+                    <span class="module-title">Page Analysis</span>
+                    <span class="module-icon">○</span>
+                </div>
+                <div class="module-status">Not analyzed yet</div>
+            </div>
+        </div>
     </div>
 
     <script type="module" src="../../dist/popup/popup.js"></script>
