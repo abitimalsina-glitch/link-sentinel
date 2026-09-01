@@ -3,13 +3,25 @@
     "name": "Link Sentinel",
     "version": "1.0",
     "description": "Scans links on the current webpage for potential threats.",
-    "permissions": ["storage"],
+
+    "permissions": [
+        "storage"
+    ],
+
+    "background": {
+        "scripts": [
+            "dist/background.js"
+        ],
+        "type": "module"
+    },
+
     "content_scripts": [
         {
             "matches": ["<all_urls>"],
             "js": ["dist/content.js"]
         }
     ],
+
     "action": {
         "default_popup": "src/popup/popup.html"
     }

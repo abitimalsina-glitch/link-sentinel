@@ -1,9 +1,8 @@
 import { startHoverScanner } from './scanner.js';
+import { ScanResult } from './types.js';
 
 console.log("[Link-Sentinel] Content script loaded");
 
-const cache = new Map<string, any>();
-const inFlight = new Map<string, Promise<any>>();
 let currentHoveredUrl: string | null = null;
 let tooltipElement: HTMLElement | null = null;
 let tooltipContent: HTMLElement | null = null;
@@ -37,7 +36,8 @@ const createTooltip = () => {
         .safe { color: #10b981; }
         .malicious { color: #ef4444; }
         .error { color: #f59e0b; }
-        .checking { color: #60a5fa; }
+        .unknown { color: #94a3b8; }
+        .checking { color: #3b82f6; }
         .row { margin: 4px 0; }
     `;
     
@@ -67,7 +67,7 @@ const hideTooltip = () => {
     }
 };
 
-const renderTooltip = (state: "CHECKING" | "SAFE" | "MALICIOUS" | "ERROR", details?: any) => {
+const renderTooltip = (state: "CHECKING" | "SAFE" | "MALICIOUS" | "UNKNOWN" | "ERROR", details?: ScanResult) => {
     if (!tooltipContent) return;
     
     tooltipContent.innerHTML = '';
@@ -80,7 +80,7 @@ const renderTooltip = (state: "CHECKING" | "SAFE" | "MALICIOUS" | "ERROR", detai
     if (state === "CHECKING") {
         const row = document.createElement('div');
         row.className = 'row checking';
-        row.textContent = '🔍 Hover detected';
+        row.textContent = '🔍 Scanning...';
         tooltipContent.appendChild(row);
         
         const row2 = document.createElement('div');
@@ -95,7 +95,7 @@ const renderTooltip = (state: "CHECKING" | "SAFE" | "MALICIOUS" | "ERROR", detai
         
         const row2 = document.createElement('div');
         row2.className = 'row';
-        row2.textContent = 'No known threats';
+        row2.textContent = 'No known threats detected';
         tooltipContent.appendChild(row2);
     } else if (state === "MALICIOUS") {
         const row1 = document.createElement('div');
@@ -106,23 +106,28 @@ const renderTooltip = (state: "CHECKING" | "SAFE" | "MALICIOUS" | "ERROR", detai
         if (details && details.threats && details.threats.length > 0) {
             const row2 = document.createElement('div');
             row2.className = 'row';
-            row2.textContent = `Type: ${details.threats[0].threat_type || 'Unknown'}`;
+            row2.textContent = `Type: ${details.threats[0]}`;
             tooltipContent.appendChild(row2);
         }
+    } else if (state === "UNKNOWN") {
+        const row1 = document.createElement('div');
+        row1.className = 'row unknown';
+        row1.textContent = '? UNKNOWN';
+        tooltipContent.appendChild(row1);
     } else if (state === "ERROR") {
         const row1 = document.createElement('div');
         row1.className = 'row error';
-        row1.textContent = 'Error';
+        row1.textContent = '✕ ERROR';
         tooltipContent.appendChild(row1);
         
         const row2 = document.createElement('div');
         row2.className = 'row';
-        row2.textContent = 'Unable to check link';
+        row2.textContent = 'Unable to verify link';
         tooltipContent.appendChild(row2);
     }
 };
 
-startHoverScanner(async (url: string, anchor: HTMLAnchorElement) => {
+startHoverScanner((url: string, anchor: HTMLAnchorElement) => {
     console.log(`[Link-Sentinel] Hover detected: ${url}`);
     currentHoveredUrl = url;
     
@@ -131,24 +136,33 @@ startHoverScanner(async (url: string, anchor: HTMLAnchorElement) => {
     
     renderTooltip("CHECKING");
     
-    setTimeout(() => {
-        if (url !== currentHoveredUrl) return;
-        renderTooltip("SAFE");
-        
-        try {
-            if (chrome && chrome.storage && chrome.storage.local) {
-                chrome.storage.local.set({
-                    lastScan: {
-                        url: url,
-                        status: "SAFE",
-                        timestamp: Date.now()
-                    }
-                });
+    try {
+        chrome.runtime.sendMessage({ type: "SCAN_URL", url }, (response) => {
+            // Check for chrome.runtime.lastError to handle background worker issues
+            if (chrome.runtime.lastError) {
+                console.error("[Link-Sentinel] Message passing error:", chrome.runtime.lastError);
+                if (url === currentHoveredUrl) {
+                    renderTooltip("ERROR");
+                }
+                return;
             }
-        } catch (e) {
-            console.warn("Storage API not available", e);
+
+            // Ensure the user hasn't moved their mouse to a different URL
+            if (url !== currentHoveredUrl) return;
+
+            if (response && response.result) {
+                const result = response.result as ScanResult;
+                renderTooltip(result.status, result);
+            } else {
+                renderTooltip("ERROR");
+            }
+        });
+    } catch (e) {
+        console.error("[Link-Sentinel] Failed to send message", e);
+        if (url === currentHoveredUrl) {
+            renderTooltip("ERROR");
         }
-    }, 600);
+    }
     
 }, (anchor: HTMLAnchorElement) => {
     currentHoveredUrl = null;

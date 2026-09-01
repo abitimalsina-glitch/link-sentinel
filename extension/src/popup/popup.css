@@ -18,6 +18,9 @@
     
     --color-scanning: #3b82f6;
     --color-scanning-bg: rgba(59, 130, 246, 0.1);
+
+    --color-unknown: #94a3b8;
+    --color-unknown-bg: rgba(148, 163, 184, 0.1);
 }
 
 body {
@@ -84,6 +87,10 @@ body {
     background: var(--color-scanning-bg);
 }
 
+.overall-status-card.card-unknown {
+    background: var(--color-unknown-bg);
+}
+
 .overall-label {
     font-size: 11px;
     text-transform: uppercase;
@@ -102,7 +109,7 @@ body {
 .card-threat .overall-value { color: var(--color-threat); }
 .card-error .overall-value { color: var(--color-error); }
 .card-scanning .overall-value { color: var(--color-scanning); }
-.card-unknown .overall-value { color: var(--text-secondary); }
+.card-unknown .overall-value { color: var(--color-unknown); }
 
 /* Modules */
 .modules-container {
@@ -143,6 +150,7 @@ body {
 .icon-threat { color: var(--color-threat); }
 .icon-error { color: var(--color-error); }
 .icon-scanning { color: var(--color-scanning); }
+.icon-unknown { color: var(--color-unknown); }
 
 .module-status {
     font-size: 12px;
@@ -153,6 +161,7 @@ body {
 .module-status.status-threat { color: var(--color-threat); }
 .module-status.status-error { color: var(--color-error); }
 .module-status.status-scanning { color: var(--color-scanning); }
+.module-status.status-unknown { color: var(--color-unknown); }
 
 .module-details {
     font-size: 11px;

@@ -14,3 +14,4 @@ build/
 
 # Progress file
 LINK_SENTINEL_PROGRESS.md
+audit.md

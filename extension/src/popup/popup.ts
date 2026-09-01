@@ -33,14 +33,23 @@ document.addEventListener('DOMContentLoaded', () => {
                     overallStatusTextEl.textContent = threatText;
                     overallStatusCardEl.className = 'overall-status-card card-threat';
                 } else if (scan.status === 'ERROR') {
-                    const errorText = 'Error during scan';
+                    const errorText = '✕ Scan failed';
                     urlRepStatusEl.textContent = errorText;
                     urlRepStatusEl.className = 'module-status status-error';
-                    urlRepIconEl.textContent = '❌';
+                    urlRepIconEl.textContent = '✕';
                     urlRepIconEl.className = 'module-icon icon-error';
                     
                     overallStatusTextEl.textContent = errorText;
                     overallStatusCardEl.className = 'overall-status-card card-error';
+                } else if (scan.status === 'UNKNOWN') {
+                    const unknownText = '? Unknown';
+                    urlRepStatusEl.textContent = unknownText;
+                    urlRepStatusEl.className = 'module-status status-unknown';
+                    urlRepIconEl.textContent = '?';
+                    urlRepIconEl.className = 'module-icon icon-unknown';
+                    
+                    overallStatusTextEl.textContent = unknownText;
+                    overallStatusCardEl.className = 'overall-status-card card-unknown';
                 } else {
                     const scanningText = 'Scanning...';
                     urlRepStatusEl.textContent = scanningText;
@@ -53,7 +62,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             } else {
                 if (overallStatusTextEl && urlRepStatusEl && overallStatusCardEl && urlRepIconEl) {
-                    const unknownText = 'Unknown';
+                    const unknownText = '? Unknown';
                     urlRepStatusEl.textContent = unknownText;
                     overallStatusTextEl.textContent = unknownText;
                     urlRepIconEl.textContent = '?';
