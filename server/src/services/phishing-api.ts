@@ -2,9 +2,9 @@ import "dotenv/config";
 import protobuf from "protobufjs";
 import { ScanResult, ScanStatus } from "../types.js";
 
-const API_KEY = process.env.API_KEY;
+const GOOGLE_SAFE_BROWSING_API_KEY = process.env.GOOGLE_SAFE_BROWSING_API_KEY;
 
-if (!API_KEY) {
+if (!GOOGLE_SAFE_BROWSING_API_KEY) {
   throw new Error("Google Safe Browsing API key not found");
 }
 
@@ -21,7 +21,7 @@ export const scanUrlsWithApi = async (urls: string[]): Promise<ScanResult[]> => 
   }
 
   const params = new URLSearchParams();
-  params.set("key", API_KEY);
+  params.set("key", GOOGLE_SAFE_BROWSING_API_KEY);
   for (const url of urls) {
     params.append("urls", url);
   }
