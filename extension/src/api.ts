@@ -1,4 +1,4 @@
-import { ScanResult } from "./types.js";
+import { ScanResult, PageAnalysis } from "./types.js";
 
 // @ts-ignore - Vite provides import.meta.env at build time
 const API_URL: string = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_URL) 
@@ -32,5 +32,27 @@ export const scanUrl = async (url: string): Promise<ScanResult> => {
     } catch (error) {
         console.error("Network error during scanUrl:", error);
         return { url, status: "ERROR" };
+    }
+};
+
+export const pollPageAnalysis = async (uuid: string): Promise<PageAnalysis> => {
+    try {
+        const response = await fetch(`${API_URL}/page-analysis/${uuid}`, {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json"
+            }
+        });
+
+        if (!response.ok) {
+            console.error(`Page analysis request failed: ${response.status}`);
+            return { status: "failed", uuid };
+        }
+
+        const data = await response.json();
+        return data as PageAnalysis;
+    } catch (error) {
+        console.error("Network error during pollPageAnalysis:", error);
+        return { status: "failed", uuid };
     }
 };
