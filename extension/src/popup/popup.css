@@ -171,3 +171,59 @@ body {
     overflow: hidden;
     text-overflow: ellipsis;
 }
+
+/* Page Analysis Results */
+.pa-results {
+    margin-top: 8px;
+}
+
+.pa-section {
+    margin-top: 8px;
+    border-top: 1px solid var(--border-color);
+    padding-top: 8px;
+}
+
+.pa-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    margin-bottom: 4px;
+    font-weight: 600;
+}
+
+.pa-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    margin-bottom: 2px;
+}
+
+.pa-key {
+    color: var(--text-secondary);
+    margin-right: 8px;
+    flex-shrink: 0;
+}
+
+.pa-value {
+    color: var(--text-primary);
+    text-align: right;
+}
+
+.pa-truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 200px;
+}
+
+.status-pre-line {
+    white-space: pre-line;
+}
+
+.status-normal {
+    white-space: normal;
+}
+
+.pa-key-no-margin {
+    margin-right: 0;
+}

@@ -55,6 +55,7 @@ function updateStorage(result: ScanResult) {
             url: result.url,
             status: result.status,
             threats: result.threats,
+            pageAnalysis: result.pageAnalysis,
             timestamp: Date.now()
         }
     });
