@@ -59,8 +59,8 @@ export const scanUrlsWithApi = async (urls: string[]): Promise<ScanResult[]> => 
   let decoded: any;
   try {
     const Threat = new protobuf.Type("Threat")
-      .add(new protobuf.Field("threat_type", 1, "string"))
-      .add(new protobuf.Field("threat", 2, "string"));
+      .add(new protobuf.Field("threat", 1, "string"))
+      .add(new protobuf.Field("threat_type", 2, "string"));
 
     const SearchResponse = new protobuf.Type("SearchResponse")
       .add(new protobuf.Field("threats", 1, "Threat", "repeated"))
@@ -85,13 +85,23 @@ export const scanUrlsWithApi = async (urls: string[]): Promise<ScanResult[]> => 
     return urls.map(url => ({ url, status: "ERROR" }));
   }
 
+  const getThreatName = (type: string) => {
+    if (!type || type.length === 0) return "UNKNOWN_THREAT";
+    const code = type.charCodeAt(0);
+    switch (code) {
+      case 1: return "MALWARE";
+      case 2: return "SOCIAL_ENGINEERING";
+      case 3: return "UNWANTED_SOFTWARE";
+      case 4: return "POTENTIALLY_HARMFUL_APPLICATION";
+      default: return `THREAT_TYPE_${code}`;
+    }
+  };
+
   return urls.map(url => {
     // In v5 urls:search, threats is a list. If it's empty, URL is safe.
     // If there's a match, it usually matches one of the requested URLs.
-    // Since we pass multiple, we should match `threat.threat` to the URL.
-    // However, if the API doesn't return the exact URL, a conservative approach for single-url requests
-    // is to mark malicious if ANY threats are returned.
-    const threatsForUrl = decoded.threats?.filter((t: any) => t.threat === url) || [];
+    // We use url.includes because Google SB may canonicalize and strip schemes (http://).
+    const threatsForUrl = decoded.threats?.filter((t: any) => url.includes(t.threat)) || [];
     
     // Fallback: if we just requested 1 URL and there are threats, assume they apply to this URL
     // even if `t.threat` isn't an exact string match (e.g., canonicalized).
@@ -103,7 +113,7 @@ export const scanUrlsWithApi = async (urls: string[]): Promise<ScanResult[]> => 
       return {
         url,
         status: "MALICIOUS",
-        threats: appliedThreats.map((t: any) => t.threat_type || "UNKNOWN_THREAT")
+        threats: appliedThreats.map((t: any) => getThreatName(t.threat_type))
       };
     }
     

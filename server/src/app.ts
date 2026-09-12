@@ -6,7 +6,8 @@ export const app: Express = express();
 app.use(express.json());
 
 app.use((req, res, next) => {
-    res.header("Access-Control-Allow-Origin", "*");
+    // We do not add Access-Control-Allow-Origin: * to prevent CSRF/SSRF from arbitrary websites.
+    // The Firefox extension will use host_permissions to bypass CORS securely.
     res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
     res.header("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
     if (req.method === "OPTIONS") {
