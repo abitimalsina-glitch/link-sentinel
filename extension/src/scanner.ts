@@ -8,8 +8,8 @@ export const startHoverScanner = (onScan: ScanCallback, onLeave: LeaveCallback) 
     let currentAnchor: HTMLAnchorElement | null = null;
 
     document.addEventListener("mouseover", (event) => {
-        const target = event.target as HTMLElement;
-        const anchor = target.closest("a");
+        const path = event.composedPath();
+        const anchor = path.find((node: any) => node.tagName && node.tagName.toLowerCase() === 'a') as HTMLAnchorElement | undefined;
 
         if (!anchor) return;
 
@@ -32,8 +32,8 @@ export const startHoverScanner = (onScan: ScanCallback, onLeave: LeaveCallback) 
     });
 
     document.addEventListener("mouseout", (event) => {
-        const target = event.target as HTMLElement;
-        const anchor = target.closest("a");
+        const path = event.composedPath();
+        const anchor = path.find((node: any) => node.tagName && node.tagName.toLowerCase() === 'a') as HTMLAnchorElement | undefined;
 
         if (!anchor) return;
 

@@ -39,7 +39,7 @@ const createTooltip = () => {
         .unknown { color: #94a3b8; }
         .checking { color: #3b82f6; }
         .row { margin: 4px 0; }
-    `;
+    `
     
     tooltipContent = document.createElement('div');
     tooltipContent.className = 'container';

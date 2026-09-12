@@ -60,3 +60,13 @@ function updateStorage(result: ScanResult) {
         }
     });
 }
+
+chrome.storage.onChanged.addListener((changes, area) => {
+    if (area === 'local' && changes.lastScan && changes.lastScan.newValue) {
+        const scan = changes.lastScan.newValue as ScanResult;
+        const cached = cache.get(scan.url);
+        if (cached) {
+            cached.result = scan; // Update the memory cache with the polled terminal state from popup
+        }
+    }
+});

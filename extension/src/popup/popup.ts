@@ -8,9 +8,8 @@ let currentPollUuid: string | undefined;
 document.addEventListener('DOMContentLoaded', () => {
     const urlRepStatusEl = document.getElementById('url-rep-status');
     const urlRepIconEl = document.getElementById('url-rep-icon');
-    const scanUrlEl = document.getElementById('scan-url');
-    const overallStatusTextEl = document.getElementById('overall-status-text');
-    const overallStatusCardEl = document.getElementById('overall-status-card');
+    const urlRepCardEl = document.getElementById('url-rep-card');
+    const urlRepExplanationEl = document.getElementById('url-rep-explanation');
 
     const paCardEl = document.getElementById('page-analysis-card');
     const paIconEl = document.getElementById('page-analysis-icon');
@@ -26,7 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const renderPageAnalysis = (pa: PageAnalysis | undefined) => {
         if (!paCardEl || !paIconEl || !paStatusEl || !paDetailsEl) return;
-        
+
         paDetailsEl.style.display = 'none';
         paDetailsEl.innerHTML = '';
         paCardEl.classList.remove('inactive');
@@ -34,60 +33,47 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!pa || pa.status === 'not_analyzed') {
             paIconEl.textContent = '○';
             paIconEl.className = 'module-icon icon-unknown';
-            paStatusEl.textContent = 'No page analysis available.';
+            paStatusEl.textContent = 'NOT ANALYZED';
             paStatusEl.className = 'module-status status-unknown';
-            paCardEl.classList.add('inactive');
+            paCardEl.className = 'module-card card-unknown inactive';
+            const expEl = document.getElementById('page-analysis-explanation');
+            if (expEl) expEl.textContent = 'Feature not analyzed yet';
             return;
         }
 
-        if (pa.status === 'submitting') {
+        if (pa.status === 'submitting' || pa.status === 'scanning') {
             paIconEl.textContent = '⟳';
             paIconEl.className = 'module-icon icon-scanning';
-            paStatusEl.textContent = 'Preparing analysis...';
+            paStatusEl.textContent = 'SCANNING';
             paStatusEl.className = 'module-status status-scanning';
+            paCardEl.className = 'module-card card-scanning';
+            const expEl = document.getElementById('page-analysis-explanation');
+            if (expEl) expEl.textContent = 'Analysis in progress';
             return;
         }
 
-        if (pa.status === 'scanning') {
-            paIconEl.textContent = '⟳';
-            paIconEl.className = 'module-icon icon-scanning';
-            paStatusEl.textContent = 'Analyzing page...\nURLScan analysis is still running.';
-            paStatusEl.className = 'module-status status-scanning status-pre-line';
-            return;
-        }
-
-        if (pa.status === 'failed') {
+        if (pa.status === 'failed' || pa.status === 'timeout' || pa.status === 'rate_limited') {
             paIconEl.textContent = '✕';
             paIconEl.className = 'module-icon icon-error';
-            paStatusEl.textContent = 'Analysis failed.\nTry scanning again.';
-            paStatusEl.className = 'module-status status-error status-pre-line';
-            return;
-        }
-
-        if (pa.status === 'timeout') {
-            paIconEl.textContent = '⚠';
-            paIconEl.className = 'module-icon icon-threat';
-            paStatusEl.textContent = 'Analysis timed out.\nThe security scan results are still available.';
-            paStatusEl.className = 'module-status status-unknown status-pre-line';
-            return;
-        }
-
-        if (pa.status === 'rate_limited') {
-            paIconEl.textContent = '⚠';
-            paIconEl.className = 'module-icon icon-threat';
-            paStatusEl.textContent = 'Analysis temporarily unavailable.\nURLScan rate limit reached.';
-            paStatusEl.className = 'module-status status-unknown status-pre-line';
+            paStatusEl.textContent = 'ERROR';
+            paStatusEl.className = 'module-status status-error';
+            paCardEl.className = 'module-card card-error';
+            const expEl = document.getElementById('page-analysis-explanation');
+            if (expEl) expEl.textContent = 'Analysis failed or timed out';
             return;
         }
 
         if (pa.status === 'complete') {
             paIconEl.textContent = '✓';
             paIconEl.className = 'module-icon icon-safe';
-            paStatusEl.textContent = 'Analysis complete';
-            paStatusEl.className = 'module-status status-safe status-normal';
+            paStatusEl.textContent = 'ANALYZED';
+            paStatusEl.className = 'module-status status-safe';
+            paCardEl.className = 'module-card card-safe';
+            const expEl = document.getElementById('page-analysis-explanation');
+            if (expEl) expEl.textContent = 'Page analysis completed';
 
             let html = '<div class="pa-results">';
-            
+
             if (pa.pageInfo) {
                 html += `
                     <div class="pa-section">
@@ -111,7 +97,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             if (pa.pageInfo && (pa.pageInfo.httpStatus || pa.pageInfo.mimeType)) {
-                 html += `
+                html += `
                     <div class="pa-section">
                         <div class="pa-label">HTTP INFORMATION</div>
                         <div class="pa-row"><span class="pa-key">Status</span> <span class="pa-value">${escapeHtml(pa.pageInfo.httpStatus)}</span></div>
@@ -121,7 +107,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             if (pa.redirects && pa.redirects.redirectCount > 0) {
-                 html += `
+                html += `
                     <div class="pa-section">
                         <div class="pa-label">REDIRECTS</div>
                         <div class="pa-row"><span class="pa-key">Count</span> <span class="pa-value">${escapeHtml(pa.redirects.redirectCount)}</span></div>
@@ -148,7 +134,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (currentPollTimeout) {
             clearTimeout(currentPollTimeout);
         }
-        
+
         let errorCount = 0;
         const maxErrors = 3;
 
@@ -157,9 +143,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
             try {
                 const updatedPa = await pollPageAnalysis(uuid);
-                
+
                 if (currentScanUrl !== forUrl || currentPollUuid !== uuid) return;
-                
+
                 errorCount = 0; // reset on success
                 renderPageAnalysis(updatedPa);
 
@@ -192,67 +178,55 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const updateUI = (scan: ScanResult | undefined) => {
-        if (!scan || !urlRepStatusEl || !scanUrlEl || !overallStatusTextEl || !overallStatusCardEl || !urlRepIconEl) {
-            if (overallStatusTextEl && urlRepStatusEl && overallStatusCardEl && urlRepIconEl) {
-                const unknownText = '? Unknown';
-                urlRepStatusEl.textContent = unknownText;
-                overallStatusTextEl.textContent = unknownText;
-                urlRepIconEl.textContent = '?';
-                overallStatusCardEl.className = 'overall-status-card card-unknown';
-            }
+        if (!urlRepStatusEl || !urlRepIconEl || !urlRepCardEl || !urlRepExplanationEl) return;
+
+        if (!scan) {
+            urlRepStatusEl.textContent = 'NOT ANALYZED';
+            urlRepStatusEl.className = 'module-status status-unknown';
+            urlRepIconEl.textContent = '○';
+            urlRepIconEl.className = 'module-icon icon-unknown';
+            urlRepCardEl.className = 'module-card card-unknown inactive';
+            urlRepExplanationEl.textContent = 'No URL scanned';
             return;
         }
 
-        let displayUrl = scan.url || '';
-        
-        scanUrlEl.textContent = displayUrl;
-        scanUrlEl.title = displayUrl;
-        
         if (scan.status === 'SAFE') {
-            const safeText = '✓ No known threats detected';
-            urlRepStatusEl.textContent = safeText;
+            urlRepStatusEl.textContent = 'SAFE';
             urlRepStatusEl.className = 'module-status status-safe';
             urlRepIconEl.textContent = '✓';
             urlRepIconEl.className = 'module-icon icon-safe';
-            
-            overallStatusTextEl.textContent = safeText;
-            overallStatusCardEl.className = 'overall-status-card card-safe';
+            urlRepCardEl.className = 'module-card card-safe';
+            urlRepExplanationEl.textContent = 'No known threats detected';
         } else if (scan.status === 'MALICIOUS') {
-            const threatText = '⚠ Threat detected';
-            urlRepStatusEl.textContent = threatText;
+            urlRepStatusEl.textContent = 'UNSAFE';
             urlRepStatusEl.className = 'module-status status-threat';
             urlRepIconEl.textContent = '⚠';
             urlRepIconEl.className = 'module-icon icon-threat';
-            
-            overallStatusTextEl.textContent = threatText;
-            overallStatusCardEl.className = 'overall-status-card card-threat';
+            urlRepCardEl.className = 'module-card card-threat';
+
+            const threatsStr = (scan.threats && scan.threats.length > 0) ? scan.threats.join(', ') : 'Threat detected';
+            urlRepExplanationEl.textContent = threatsStr;
         } else if (scan.status === 'ERROR') {
-            const errorText = '✕ Scan failed';
-            urlRepStatusEl.textContent = errorText;
+            urlRepStatusEl.textContent = 'ERROR';
             urlRepStatusEl.className = 'module-status status-error';
             urlRepIconEl.textContent = '✕';
             urlRepIconEl.className = 'module-icon icon-error';
-            
-            overallStatusTextEl.textContent = errorText;
-            overallStatusCardEl.className = 'overall-status-card card-error';
+            urlRepCardEl.className = 'module-card card-error';
+            urlRepExplanationEl.textContent = 'Scan failed';
         } else if (scan.status === 'UNKNOWN') {
-            const unknownText = '? Unknown';
-            urlRepStatusEl.textContent = unknownText;
+            urlRepStatusEl.textContent = 'UNKNOWN';
             urlRepStatusEl.className = 'module-status status-unknown';
             urlRepIconEl.textContent = '?';
             urlRepIconEl.className = 'module-icon icon-unknown';
-            
-            overallStatusTextEl.textContent = unknownText;
-            overallStatusCardEl.className = 'overall-status-card card-unknown';
+            urlRepCardEl.className = 'module-card card-unknown';
+            urlRepExplanationEl.textContent = 'No definitive result';
         } else {
-            const scanningText = 'Scanning...';
-            urlRepStatusEl.textContent = scanningText;
+            urlRepStatusEl.textContent = 'SCANNING';
             urlRepStatusEl.className = 'module-status status-scanning';
             urlRepIconEl.textContent = '⟳';
             urlRepIconEl.className = 'module-icon icon-scanning';
-            
-            overallStatusTextEl.textContent = scanningText;
-            overallStatusCardEl.className = 'overall-status-card card-scanning';
+            urlRepCardEl.className = 'module-card card-scanning';
+            urlRepExplanationEl.textContent = 'Checking URL...';
         }
 
         // Page Analysis Logic

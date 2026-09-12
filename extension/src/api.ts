@@ -1,8 +1,8 @@
 import { ScanResult, PageAnalysis } from "./types.js";
 
 // @ts-ignore - Vite provides import.meta.env at build time
-const API_URL: string = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_URL) 
-    ? import.meta.env.VITE_API_URL 
+const API_URL: string = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_URL)
+    ? import.meta.env.VITE_API_URL
     : "http://localhost:3000/api";
 
 export const scanUrl = async (url: string): Promise<ScanResult> => {
@@ -23,7 +23,7 @@ export const scanUrl = async (url: string): Promise<ScanResult> => {
         const data = await response.json();
         // data.results is an array of ScanResult
         const result = data.results && data.results[0];
-        
+
         if (result) {
             return result as ScanResult;
         }
