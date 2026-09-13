@@ -2,7 +2,8 @@ import {Request, Response} from 'express';
 import { isValidUrlArray } from '../validation/urlValidation.js';
 import { scanUrlsWithApi } from "../services/phishing-api.js";
 import { submitForAnalysis, getAnalysisResult } from "../services/urlscan-api.js";
-import { ScanResult, PageAnalysis } from '../types.js';
+import { ScanResult, PageAnalysis, DomainAnalysis } from '../types.js';
+import { analyzeDomain } from '../services/otx-api.js';
 
 export const scanUrls = async (req: Request, res: Response) => {
     const { urls } = req.body;
@@ -19,13 +20,20 @@ export const scanUrls = async (req: Request, res: Response) => {
         
         // Execute URLScan submission for all URLs concurrently
         const pageAnalysisPromises = urls.map(url => submitForAnalysis(url));
-        const pageAnalyses = await Promise.all(pageAnalysisPromises);
+        // Execute OTX domain analysis for all URLs concurrently
+        const domainAnalysisPromises = urls.map(url => analyzeDomain(url));
+
+        const [pageAnalyses, domainAnalyses] = await Promise.all([
+            Promise.all(pageAnalysisPromises),
+            Promise.all(domainAnalysisPromises)
+        ]);
 
         // Merge results
         const results: ScanResult[] = baseResults.map((result, index) => {
             return {
                 ...result,
-                pageAnalysis: pageAnalyses[index] as PageAnalysis
+                pageAnalysis: pageAnalyses[index] as PageAnalysis,
+                domainAnalysis: domainAnalyses[index] as DomainAnalysis
             };
         });
 

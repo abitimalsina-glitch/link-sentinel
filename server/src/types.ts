@@ -31,9 +31,17 @@ export interface PageAnalysis {
     };
 }
 
+export interface DomainAnalysis {
+    status: "SAFE" | "SUSPICIOUS" | "MALICIOUS" | "UNKNOWN" | "ERROR";
+    domain: string;
+    pulseCount?: number;
+    relatedMalware?: string[];
+}
+
 export interface ScanResult {
     url: string;
     status: ScanStatus;
     threats?: string[];
     pageAnalysis?: PageAnalysis;
+    domainAnalysis?: DomainAnalysis;
 }
