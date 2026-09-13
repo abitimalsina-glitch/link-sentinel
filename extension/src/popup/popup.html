@@ -9,59 +9,92 @@
 </head>
 
 <body>
-    <div class="app-container">
-        <header class="header">
-            <div class="logo-area">
-                <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round"
-                        d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                </svg>
-                <span class="logo-text">Link-Sentinel</span>
-            </div>
-        </header>
+    <div class="app-container" id="app-container">
+        <div class="empty-state" id="empty-state" style="display: none;">
+            <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <div class="empty-text">Hover over a link to scan it.</div>
+        </div>
 
-        <div class="modules-container">
-            <!-- URL Reputation -->
-            <div class="module-card" id="url-rep-card">
-                <div class="module-header">
-                    <span class="module-title">URL Reputation</span>
-                    <span class="module-icon" id="url-rep-icon">⟳</span>
+        <div id="scan-content">
+            <header class="header">
+                <div class="logo-area">
+                    <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                    </svg>
+                    <span class="logo-text">Link-Sentinel</span>
                 </div>
-                <div class="module-status" id="url-rep-status">SCANNING</div>
-                <div class="module-explanation" id="url-rep-explanation">Checking URL...</div>
-                <div class="module-provider">Google Safe Browsing</div>
-            </div>
+            </header>
 
-            <!-- Phishing Detection -->
-            <div class="module-card inactive">
-                <div class="module-header">
-                    <span class="module-title">Phishing Detection</span>
-                    <span class="module-icon">○</span>
-                </div>
-                <div class="module-status">NOT ANALYZED</div>
-                <div class="module-explanation">Feature not implemented yet</div>
+            <div class="overall-status-card" id="overall-status-card">
+                <div class="overall-label">OVERALL SECURITY VERDICT</div>
+                <div class="overall-value" id="overall-value">SCANNING...</div>
             </div>
 
-            <!-- Domain Analysis -->
-            <div class="module-card inactive">
-                <div class="module-header">
-                    <span class="module-title">Domain Analysis</span>
-                    <span class="module-icon">○</span>
+            <div class="modules-container">
+                <!-- URL Reputation -->
+                <div class="provider-row" id="url-rep-row">
+                    <div class="provider-info">
+                        <span class="provider-icon" id="url-rep-icon"></span>
+                        <div>
+                            <div class="provider-name">URL Reputation</div>
+                            <div class="provider-source" id="url-rep-source">Google Safe Browsing</div>
+                        </div>
+                    </div>
+                    <div class="provider-status" id="url-rep-status">SCANNING</div>
                 </div>
-                <div class="module-status">NOT ANALYZED</div>
-                <div class="module-explanation">Feature not implemented yet</div>
+
+                <!-- Domain Analysis -->
+                <div class="provider-row" id="domain-row">
+                    <div class="provider-info">
+                        <span class="provider-icon" id="domain-icon"></span>
+                        <div>
+                            <div class="provider-name">Domain Analysis</div>
+                            <div class="provider-source" id="domain-source">AlienVault OTX</div>
+                        </div>
+                    </div>
+                    <div class="provider-status" id="domain-status">SCANNING</div>
+                </div>
+
+                <!-- Page Analysis -->
+                <div class="provider-row" id="pa-row">
+                    <div class="provider-info">
+                        <span class="provider-icon" id="pa-icon"></span>
+                        <div>
+                            <div class="provider-name">Page Analysis</div>
+                            <div class="provider-source" id="pa-source">URLScan.io</div>
+                        </div>
+                    </div>
+                    <div class="provider-status" id="pa-status">SCANNING</div>
+                </div>
+
+                <!-- Phishing Detection -->
+                <div class="provider-row inactive" id="phishing-row">
+                    <div class="provider-info">
+                        <span class="provider-icon" id="phishing-icon"></span>
+                        <div>
+                            <div class="provider-name">Phishing Detection</div>
+                            <div class="provider-source">Module Disabled</div>
+                        </div>
+                    </div>
+                    <div class="provider-status status-unknown" id="phishing-status">NOT ANALYZED</div>
+                </div>
             </div>
 
-            <!-- Page Analysis -->
-            <div class="module-card inactive" id="page-analysis-card">
-                <div class="module-header">
-                    <span class="module-title">Page Analysis</span>
-                    <span class="module-icon" id="page-analysis-icon">○</span>
+            <div class="details-section" id="details-section" style="display: none;">
+                <div class="details-toggle" id="details-toggle">
+                    <span>View Technical Details</span>
+                    <svg class="chevron-icon" id="details-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
                 </div>
-                <div class="module-status" id="page-analysis-status">NOT ANALYZED</div>
-                <div class="module-explanation" id="page-analysis-explanation">Feature not analyzed yet</div>
-                <div class="module-provider">URLScan.io</div>
-                <div class="module-details" id="page-analysis-details" style="display: none;"></div>
+                <div class="details-content" id="details-content" style="display: none;">
+                    <div id="domain-details" style="display: none;"></div>
+                    <div id="page-analysis-details" style="display: none;"></div>
+                </div>
             </div>
         </div>
     </div>

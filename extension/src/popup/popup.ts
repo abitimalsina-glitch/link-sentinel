@@ -1,20 +1,67 @@
 import { pollPageAnalysis } from '../api.js';
-import { PageAnalysis, ScanResult } from '../types.js';
+import { PageAnalysis, ScanResult, DomainAnalysis } from '../types.js';
 
 let currentPollTimeout: number | undefined;
 let currentScanUrl: string | undefined;
 let currentPollUuid: string | undefined;
 
-document.addEventListener('DOMContentLoaded', () => {
-    const urlRepStatusEl = document.getElementById('url-rep-status');
-    const urlRepIconEl = document.getElementById('url-rep-icon');
-    const urlRepCardEl = document.getElementById('url-rep-card');
-    const urlRepExplanationEl = document.getElementById('url-rep-explanation');
+const ICONS = {
+    safe: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg>`,
+    threat: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>`,
+    error: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>`,
+    scanning: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>`,
+    unknown: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"></line></svg>`,
+    analyzed: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`
+};
 
-    const paCardEl = document.getElementById('page-analysis-card');
-    const paIconEl = document.getElementById('page-analysis-icon');
-    const paStatusEl = document.getElementById('page-analysis-status');
+document.addEventListener('DOMContentLoaded', () => {
+    // Top Level
+    const emptyStateEl = document.getElementById('empty-state');
+    const scanContentEl = document.getElementById('scan-content');
+    
+    // Overall
+    const overallCardEl = document.getElementById('overall-status-card');
+    const overallValueEl = document.getElementById('overall-value');
+
+    // Modules
+    const urlRepIconEl = document.getElementById('url-rep-icon');
+    const urlRepStatusEl = document.getElementById('url-rep-status');
+
+    const domainRowEl = document.getElementById('domain-row');
+    const domainIconEl = document.getElementById('domain-icon');
+    const domainStatusEl = document.getElementById('domain-status');
+    const domainSourceEl = document.getElementById('domain-source');
+
+    const paRowEl = document.getElementById('pa-row');
+    const paIconEl = document.getElementById('pa-icon');
+    const paStatusEl = document.getElementById('pa-status');
+
+    const phishingIconEl = document.getElementById('phishing-icon');
+    
+    // Details
+    const detailsSectionEl = document.getElementById('details-section');
+    const detailsToggleEl = document.getElementById('details-toggle');
+    const detailsContentEl = document.getElementById('details-content');
+    const domainDetailsEl = document.getElementById('domain-details');
     const paDetailsEl = document.getElementById('page-analysis-details');
+
+    if (phishingIconEl) {
+        phishingIconEl.innerHTML = ICONS.unknown;
+        phishingIconEl.className = 'provider-icon icon-unknown';
+    }
+
+    if (detailsToggleEl && detailsSectionEl && detailsContentEl) {
+        detailsToggleEl.addEventListener('click', () => {
+            const isOpen = detailsSectionEl.classList.contains('open');
+            if (isOpen) {
+                detailsSectionEl.classList.remove('open');
+                detailsContentEl.style.display = 'none';
+            } else {
+                detailsSectionEl.classList.add('open');
+                detailsContentEl.style.display = 'block';
+            }
+        });
+    }
 
     const escapeHtml = (str: string | number | boolean | undefined | null): string => {
         if (str === null || str === undefined) return '';
@@ -23,63 +70,155 @@ document.addEventListener('DOMContentLoaded', () => {
         return div.innerHTML;
     };
 
-    const renderPageAnalysis = (pa: PageAnalysis | undefined) => {
-        if (!paCardEl || !paIconEl || !paStatusEl || !paDetailsEl) return;
+    const updateOverallStatus = (scan: ScanResult) => {
+        if (!overallCardEl || !overallValueEl) return;
+        
+        let isMalicious = false;
+        let isSuspicious = false;
+        let isScanning = false;
+        let isError = false;
 
-        paDetailsEl.style.display = 'none';
+        // Check URL Rep
+        if (scan.status === 'MALICIOUS') isMalicious = true;
+        if (scan.status === 'ERROR') isError = true;
+        
+        // Check Domain Analysis
+        if (scan.domainAnalysis) {
+            if (scan.domainAnalysis.status === 'MALICIOUS') isMalicious = true;
+            if (scan.domainAnalysis.status === 'SUSPICIOUS') isSuspicious = true;
+            if (scan.domainAnalysis.status === 'ERROR') isError = true;
+        }
+
+        // Check Page Analysis
+        if (scan.pageAnalysis) {
+            if (scan.pageAnalysis.status === 'submitting' || scan.pageAnalysis.status === 'scanning') isScanning = true;
+        }
+
+        // Reset classes
+        overallCardEl.className = 'overall-status-card';
+        
+        if (isMalicious) {
+            overallValueEl.textContent = 'DANGEROUS';
+            overallCardEl.classList.add('card-threat');
+        } else if (isSuspicious) {
+            overallValueEl.textContent = 'SUSPICIOUS';
+            overallCardEl.classList.add('card-error'); // Using yellow/orange color for suspicious
+        } else if (isScanning) {
+            overallValueEl.textContent = 'SCANNING...';
+            overallCardEl.classList.add('card-scanning');
+        } else if (isError) {
+            overallValueEl.textContent = 'ERROR / INCOMPLETE';
+            overallCardEl.classList.add('card-unknown');
+        } else {
+            overallValueEl.textContent = 'SAFE';
+            overallCardEl.classList.add('card-safe');
+        }
+    };
+
+    const renderDomainAnalysis = (da: DomainAnalysis | undefined) => {
+        if (!domainRowEl || !domainIconEl || !domainStatusEl || !domainDetailsEl || !detailsSectionEl) return;
+
+        domainRowEl.classList.remove('inactive');
+        domainDetailsEl.innerHTML = '';
+        domainDetailsEl.style.display = 'none';
+
+        if (!da || da.status === 'UNKNOWN') {
+            domainIconEl.innerHTML = ICONS.unknown;
+            domainIconEl.className = 'provider-icon icon-unknown';
+            domainStatusEl.textContent = 'NO DATA';
+            domainStatusEl.className = 'provider-status status-unknown';
+            if (domainSourceEl) domainSourceEl.textContent = 'AlienVault OTX';
+            return;
+        }
+
+        if (da.status === 'ERROR') {
+            domainIconEl.innerHTML = ICONS.error;
+            domainIconEl.className = 'provider-icon icon-error';
+            domainStatusEl.textContent = 'ERROR';
+            domainStatusEl.className = 'provider-status status-error';
+            return;
+        }
+
+        if (da.status === 'MALICIOUS' || da.status === 'SUSPICIOUS') {
+            const isMalicious = da.status === 'MALICIOUS';
+            domainIconEl.innerHTML = ICONS.threat;
+            domainIconEl.className = `provider-icon ${isMalicious ? 'icon-threat' : 'icon-error'}`;
+            domainStatusEl.textContent = da.status;
+            domainStatusEl.className = `provider-status ${isMalicious ? 'status-threat' : 'status-error'}`;
+            
+            if (domainSourceEl) {
+                domainSourceEl.textContent = `Found in ${da.pulseCount} OTX pulse${da.pulseCount === 1 ? '' : 's'}`;
+            }
+
+            if (da.relatedMalware && da.relatedMalware.length > 0) {
+                detailsSectionEl.style.display = 'block';
+                domainDetailsEl.style.display = 'block';
+                domainDetailsEl.innerHTML = `
+                    <div class="pa-section">
+                        <div class="pa-label">OTX THREAT INTELLIGENCE</div>
+                        <div class="pa-row"><span class="pa-key">Related Malware</span></div>
+                        <div class="pa-row"><span class="pa-value pa-truncate" style="text-align: left;" title="${escapeHtml(da.relatedMalware.join(', '))}">${escapeHtml(da.relatedMalware.join(', '))}</span></div>
+                    </div>
+                `;
+            }
+            return;
+        }
+
+        // SAFE case
+        domainIconEl.innerHTML = ICONS.safe;
+        domainIconEl.className = 'provider-icon icon-safe';
+        domainStatusEl.textContent = 'SAFE';
+        domainStatusEl.className = 'provider-status status-safe';
+    };
+
+    const renderPageAnalysis = (pa: PageAnalysis | undefined) => {
+        if (!paRowEl || !paIconEl || !paStatusEl || !paDetailsEl || !detailsSectionEl) return;
+
         paDetailsEl.innerHTML = '';
-        paCardEl.classList.remove('inactive');
+        paDetailsEl.style.display = 'none';
+        paRowEl.classList.remove('inactive');
 
         if (!pa || pa.status === 'not_analyzed') {
-            paIconEl.textContent = '○';
-            paIconEl.className = 'module-icon icon-unknown';
-            paStatusEl.textContent = 'NOT ANALYZED';
-            paStatusEl.className = 'module-status status-unknown';
-            paCardEl.className = 'module-card card-unknown inactive';
-            const expEl = document.getElementById('page-analysis-explanation');
-            if (expEl) expEl.textContent = 'Feature not analyzed yet';
+            paIconEl.innerHTML = ICONS.unknown;
+            paIconEl.className = 'provider-icon icon-unknown';
+            paStatusEl.textContent = 'AWAITING';
+            paStatusEl.className = 'provider-status status-unknown';
             return;
         }
 
         if (pa.status === 'submitting' || pa.status === 'scanning') {
-            paIconEl.textContent = '⟳';
-            paIconEl.className = 'module-icon icon-scanning';
+            paIconEl.innerHTML = ICONS.scanning;
+            paIconEl.className = 'provider-icon icon-scanning';
             paStatusEl.textContent = 'SCANNING';
-            paStatusEl.className = 'module-status status-scanning';
-            paCardEl.className = 'module-card card-scanning';
-            const expEl = document.getElementById('page-analysis-explanation');
-            if (expEl) expEl.textContent = 'Analysis in progress';
+            paStatusEl.className = 'provider-status status-scanning';
             return;
         }
 
         if (pa.status === 'failed' || pa.status === 'timeout' || pa.status === 'rate_limited') {
-            paIconEl.textContent = '✕';
-            paIconEl.className = 'module-icon icon-error';
+            paIconEl.innerHTML = ICONS.error;
+            paIconEl.className = 'provider-icon icon-error';
             paStatusEl.textContent = 'ERROR';
-            paStatusEl.className = 'module-status status-error';
-            paCardEl.className = 'module-card card-error';
-            const expEl = document.getElementById('page-analysis-explanation');
-            if (expEl) expEl.textContent = 'Analysis failed or timed out';
+            paStatusEl.className = 'provider-status status-error';
             return;
         }
 
         if (pa.status === 'complete') {
-            paIconEl.textContent = '✓';
-            paIconEl.className = 'module-icon icon-safe';
+            // CRITICAL FIX: "Complete" != "Safe"
+            paIconEl.innerHTML = ICONS.analyzed;
+            paIconEl.className = 'provider-icon icon-analyzed';
             paStatusEl.textContent = 'ANALYZED';
-            paStatusEl.className = 'module-status status-safe';
-            paCardEl.className = 'module-card card-safe';
-            const expEl = document.getElementById('page-analysis-explanation');
-            if (expEl) expEl.textContent = 'Page analysis completed';
+            paStatusEl.className = 'provider-status status-analyzed';
+            
+            detailsSectionEl.style.display = 'block';
+            paDetailsEl.style.display = 'block';
 
             let html = '<div class="pa-results">';
 
             if (pa.pageInfo) {
                 html += `
                     <div class="pa-section">
-                        <div class="pa-label">PAGE</div>
+                        <div class="pa-label">PAGE (URLSCAN)</div>
                         <div class="pa-row"><span class="pa-key">Title</span> <span class="pa-value pa-truncate" title="${escapeHtml(pa.pageInfo.pageTitle)}">${escapeHtml(pa.pageInfo.pageTitle)}</span></div>
-                        <div class="pa-row"><span class="pa-key">URL</span> <span class="pa-value pa-truncate" title="${escapeHtml(pa.pageInfo.pageUrl)}">${escapeHtml(pa.pageInfo.pageUrl)}</span></div>
                         <div class="pa-row"><span class="pa-key">Final URL</span> <span class="pa-value pa-truncate" title="${escapeHtml(pa.pageInfo.finalUrl)}">${escapeHtml(pa.pageInfo.finalUrl)}</span></div>
                     </div>
                 `;
@@ -88,45 +227,15 @@ document.addEventListener('DOMContentLoaded', () => {
             if (pa.infrastructure) {
                 html += `
                     <div class="pa-section">
-                        <div class="pa-label">NETWORK / INFRASTRUCTURE</div>
+                        <div class="pa-label">INFRASTRUCTURE</div>
                         <div class="pa-row"><span class="pa-key">Country</span> <span class="pa-value">${escapeHtml(pa.infrastructure.country)}</span></div>
                         <div class="pa-row"><span class="pa-key">ASN</span> <span class="pa-value">${escapeHtml(pa.infrastructure.asn)}</span></div>
-                        <div class="pa-row"><span class="pa-key">Server</span> <span class="pa-value">${escapeHtml(pa.infrastructure.server)}</span></div>
-                    </div>
-                `;
-            }
-
-            if (pa.pageInfo && (pa.pageInfo.httpStatus || pa.pageInfo.mimeType)) {
-                html += `
-                    <div class="pa-section">
-                        <div class="pa-label">HTTP INFORMATION</div>
-                        <div class="pa-row"><span class="pa-key">Status</span> <span class="pa-value">${escapeHtml(pa.pageInfo.httpStatus)}</span></div>
-                        <div class="pa-row"><span class="pa-key">Content Type</span> <span class="pa-value pa-truncate" title="${escapeHtml(pa.pageInfo.mimeType)}">${escapeHtml(pa.pageInfo.mimeType)}</span></div>
-                    </div>
-                `;
-            }
-
-            if (pa.redirects && pa.redirects.redirectCount > 0) {
-                html += `
-                    <div class="pa-section">
-                        <div class="pa-label">REDIRECTS</div>
-                        <div class="pa-row"><span class="pa-key">Count</span> <span class="pa-value">${escapeHtml(pa.redirects.redirectCount)}</span></div>
-                    </div>
-                `;
-            }
-
-            if (pa.infrastructure && pa.infrastructure.technologies && pa.infrastructure.technologies.length > 0) {
-                html += `
-                    <div class="pa-section">
-                        <div class="pa-label">TECHNOLOGIES</div>
-                        <div class="pa-row"><span class="pa-key pa-key-no-margin"></span><span class="pa-value pa-truncate" title="${escapeHtml(pa.infrastructure.technologies.join(', '))}">${escapeHtml(pa.infrastructure.technologies.join(', '))}</span></div>
                     </div>
                 `;
             }
 
             html += '</div>';
             paDetailsEl.innerHTML = html;
-            paDetailsEl.style.display = 'block';
         }
     };
 
@@ -147,12 +256,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (currentScanUrl !== forUrl || currentPollUuid !== uuid) return;
 
                 errorCount = 0; // reset on success
-                renderPageAnalysis(updatedPa);
-
-                // Update storage to persist state without triggering another poll via updateUI
+                
+                // Get fresh state to do full render so overall status stays correct
                 chrome.storage.local.get(['lastScan'], (res: { lastScan?: ScanResult }) => {
                     if (res.lastScan && res.lastScan.url === forUrl) {
                         res.lastScan.pageAnalysis = updatedPa;
+                        renderPageAnalysis(updatedPa);
+                        updateOverallStatus(res.lastScan);
                         chrome.storage.local.set({ lastScan: res.lastScan });
                     }
                 });
@@ -168,6 +278,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (errorCount >= maxErrors) {
                     renderPageAnalysis({ status: 'failed', uuid } as PageAnalysis);
                     currentPollUuid = undefined;
+                    
+                    // Force update overall
+                    chrome.storage.local.get(['lastScan'], (res: { lastScan?: ScanResult }) => {
+                        if (res.lastScan && res.lastScan.url === forUrl) {
+                            res.lastScan.pageAnalysis = { status: 'failed', uuid } as PageAnalysis;
+                            updateOverallStatus(res.lastScan);
+                        }
+                    });
+
                 } else {
                     currentPollTimeout = window.setTimeout(poll, 2500);
                 }
@@ -178,56 +297,50 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const updateUI = (scan: ScanResult | undefined) => {
-        if (!urlRepStatusEl || !urlRepIconEl || !urlRepCardEl || !urlRepExplanationEl) return;
+        if (!urlRepStatusEl || !urlRepIconEl || !emptyStateEl || !scanContentEl || !detailsSectionEl) return;
 
         if (!scan) {
-            urlRepStatusEl.textContent = 'NOT ANALYZED';
-            urlRepStatusEl.className = 'module-status status-unknown';
-            urlRepIconEl.textContent = '○';
-            urlRepIconEl.className = 'module-icon icon-unknown';
-            urlRepCardEl.className = 'module-card card-unknown inactive';
-            urlRepExplanationEl.textContent = 'No URL scanned';
+            emptyStateEl.style.display = 'flex';
+            scanContentEl.style.display = 'none';
             return;
         }
+        
+        emptyStateEl.style.display = 'none';
+        scanContentEl.style.display = 'block';
+        
+        // Hide details by default until proven otherwise
+        detailsSectionEl.style.display = 'none';
 
+        // URL Reputation
         if (scan.status === 'SAFE') {
             urlRepStatusEl.textContent = 'SAFE';
-            urlRepStatusEl.className = 'module-status status-safe';
-            urlRepIconEl.textContent = '✓';
-            urlRepIconEl.className = 'module-icon icon-safe';
-            urlRepCardEl.className = 'module-card card-safe';
-            urlRepExplanationEl.textContent = 'No known threats detected';
+            urlRepStatusEl.className = 'provider-status status-safe';
+            urlRepIconEl.innerHTML = ICONS.safe;
+            urlRepIconEl.className = 'provider-icon icon-safe';
         } else if (scan.status === 'MALICIOUS') {
             urlRepStatusEl.textContent = 'UNSAFE';
-            urlRepStatusEl.className = 'module-status status-threat';
-            urlRepIconEl.textContent = '⚠';
-            urlRepIconEl.className = 'module-icon icon-threat';
-            urlRepCardEl.className = 'module-card card-threat';
-
-            const threatsStr = (scan.threats && scan.threats.length > 0) ? scan.threats.join(', ') : 'Threat detected';
-            urlRepExplanationEl.textContent = threatsStr;
+            urlRepStatusEl.className = 'provider-status status-threat';
+            urlRepIconEl.innerHTML = ICONS.threat;
+            urlRepIconEl.className = 'provider-icon icon-threat';
         } else if (scan.status === 'ERROR') {
             urlRepStatusEl.textContent = 'ERROR';
-            urlRepStatusEl.className = 'module-status status-error';
-            urlRepIconEl.textContent = '✕';
-            urlRepIconEl.className = 'module-icon icon-error';
-            urlRepCardEl.className = 'module-card card-error';
-            urlRepExplanationEl.textContent = 'Scan failed';
+            urlRepStatusEl.className = 'provider-status status-error';
+            urlRepIconEl.innerHTML = ICONS.error;
+            urlRepIconEl.className = 'provider-icon icon-error';
         } else if (scan.status === 'UNKNOWN') {
             urlRepStatusEl.textContent = 'UNKNOWN';
-            urlRepStatusEl.className = 'module-status status-unknown';
-            urlRepIconEl.textContent = '?';
-            urlRepIconEl.className = 'module-icon icon-unknown';
-            urlRepCardEl.className = 'module-card card-unknown';
-            urlRepExplanationEl.textContent = 'No definitive result';
+            urlRepStatusEl.className = 'provider-status status-unknown';
+            urlRepIconEl.innerHTML = ICONS.unknown;
+            urlRepIconEl.className = 'provider-icon icon-unknown';
         } else {
             urlRepStatusEl.textContent = 'SCANNING';
-            urlRepStatusEl.className = 'module-status status-scanning';
-            urlRepIconEl.textContent = '⟳';
-            urlRepIconEl.className = 'module-icon icon-scanning';
-            urlRepCardEl.className = 'module-card card-scanning';
-            urlRepExplanationEl.textContent = 'Checking URL...';
+            urlRepStatusEl.className = 'provider-status status-scanning';
+            urlRepIconEl.innerHTML = ICONS.scanning;
+            urlRepIconEl.className = 'provider-icon icon-scanning';
         }
+
+        // Domain Analysis
+        renderDomainAnalysis(scan.domainAnalysis);
 
         // Page Analysis Logic
         if (scan.url !== currentScanUrl) {
@@ -238,6 +351,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         renderPageAnalysis(scan.pageAnalysis);
+
+        // Compute overall status last
+        updateOverallStatus(scan);
 
         if (scan.pageAnalysis && scan.pageAnalysis.uuid && scan.pageAnalysis.uuid !== currentPollUuid && (scan.pageAnalysis.status === 'submitting' || scan.pageAnalysis.status === 'scanning')) {
             currentPollUuid = scan.pageAnalysis.uuid;

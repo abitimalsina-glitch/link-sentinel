@@ -4,6 +4,12 @@
     "version": "1.0",
     "description": "Scans links on the current webpage for potential threats.",
 
+    "browser_specific_settings": {
+        "gecko": {
+            "id": "link-sentinel@local"
+        }
+    },
+
     "permissions": [
         "storage"
     ],
