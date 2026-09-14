@@ -1,6 +1,8 @@
 import { startHoverScanner } from './scanner.js';
 import { ScanResult } from './types.js';
 
+import { themeVariables } from './theme.js';
+
 console.log("[Link-Sentinel] Content script loaded");
 
 let currentHoveredUrl: string | null = null;
@@ -21,24 +23,51 @@ const createTooltip = () => {
     
     const style = document.createElement('style');
     style.textContent = `
-        .container {
-            background: #111827;
-            color: #e2e8f0;
-            border: 1px solid #374151;
-            border-radius: 6px;
-            padding: 12px;
-            font-family: Arial, sans-serif;
-            font-size: 13px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            min-width: 150px;
+        :host {
+            ${themeVariables}
         }
-        .header { font-weight: bold; margin-bottom: 8px; border-bottom: 1px solid #374151; padding-bottom: 4px; }
-        .safe { color: #10b981; }
-        .malicious { color: #ef4444; }
-        .error { color: #f59e0b; }
-        .unknown { color: #94a3b8; }
-        .checking { color: #3b82f6; }
-        .row { margin: 4px 0; }
+        .container {
+            background: var(--bg-card);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 12px 16px;
+            font-family: var(--font-family);
+            font-size: 13px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            min-width: 180px;
+        }
+        .header { 
+            font-weight: 600; 
+            margin-bottom: 8px; 
+            border-bottom: 1px solid var(--border-color); 
+            padding-bottom: 6px; 
+            color: var(--text-secondary);
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .safe { color: var(--color-safe); font-weight: 600; }
+        .malicious { color: var(--color-threat); font-weight: 600; }
+        .suspicious { color: var(--color-error); font-weight: 600; }
+        .error { color: var(--color-unknown); font-weight: 600; }
+        .unknown { color: var(--color-unknown); font-weight: 600; }
+        .checking { color: var(--color-scanning); font-weight: 600; }
+        .row { margin: 6px 0; }
+        .url {
+            color: var(--text-secondary);
+            font-size: 11px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            max-width: 250px;
+            margin-top: 4px;
+        }
+        .detail {
+            color: var(--text-secondary);
+            font-size: 12px;
+            margin-top: 4px;
+        }
     `
     
     tooltipContent = document.createElement('div');
@@ -67,62 +96,67 @@ const hideTooltip = () => {
     }
 };
 
-const renderTooltip = (state: "CHECKING" | "SAFE" | "MALICIOUS" | "UNKNOWN" | "ERROR", details?: ScanResult) => {
+const renderTooltip = (state: "CHECKING" | "SAFE" | "SUSPICIOUS" | "MALICIOUS" | "UNKNOWN" | "ERROR" | "SCANNING", details?: ScanResult) => {
     if (!tooltipContent) return;
     
     tooltipContent.innerHTML = '';
     
     const header = document.createElement('div');
     header.className = 'header';
-    header.textContent = 'Link-Sentinel';
+    header.textContent = 'LINK-SENTINEL';
     tooltipContent.appendChild(header);
     
-    if (state === "CHECKING") {
+    if (state === "CHECKING" || state === "SCANNING") {
         const row = document.createElement('div');
         row.className = 'row checking';
-        row.textContent = '🔍 Scanning...';
+        row.textContent = 'SCANNING...';
         tooltipContent.appendChild(row);
         
         const row2 = document.createElement('div');
-        row2.className = 'row';
+        row2.className = 'url';
         row2.textContent = currentHoveredUrl || '';
         tooltipContent.appendChild(row2);
     } else if (state === "SAFE") {
         const row1 = document.createElement('div');
         row1.className = 'row safe';
-        row1.textContent = '✓ SAFE';
+        row1.textContent = 'SAFE';
         tooltipContent.appendChild(row1);
         
         const row2 = document.createElement('div');
-        row2.className = 'row';
-        row2.textContent = 'No known threats detected';
+        row2.className = 'detail';
+        row2.textContent = 'No threats detected by providers';
         tooltipContent.appendChild(row2);
+    } else if (state === "SUSPICIOUS") {
+        const row1 = document.createElement('div');
+        row1.className = 'row suspicious';
+        row1.textContent = 'SUSPICIOUS';
+        tooltipContent.appendChild(row1);
     } else if (state === "MALICIOUS") {
         const row1 = document.createElement('div');
         row1.className = 'row malicious';
-        row1.textContent = '⚠️ MALICIOUS';
+        row1.textContent = 'DANGEROUS';
         tooltipContent.appendChild(row1);
         
         if (details && details.threats && details.threats.length > 0) {
             const row2 = document.createElement('div');
-            row2.className = 'row';
-            row2.textContent = `Type: ${details.threats[0]}`;
+            row2.className = 'detail';
+            row2.textContent = `Type: ${details.threats.join(', ')}`;
             tooltipContent.appendChild(row2);
         }
     } else if (state === "UNKNOWN") {
         const row1 = document.createElement('div');
         row1.className = 'row unknown';
-        row1.textContent = '? UNKNOWN';
+        row1.textContent = 'UNVERIFIED';
         tooltipContent.appendChild(row1);
     } else if (state === "ERROR") {
         const row1 = document.createElement('div');
         row1.className = 'row error';
-        row1.textContent = '✕ ERROR';
+        row1.textContent = 'ERROR';
         tooltipContent.appendChild(row1);
         
         const row2 = document.createElement('div');
-        row2.className = 'row';
-        row2.textContent = 'Unable to verify link';
+        row2.className = 'detail';
+        row2.textContent = 'Unable to complete scan';
         tooltipContent.appendChild(row2);
     }
 };
@@ -152,7 +186,8 @@ startHoverScanner((url: string, anchor: HTMLAnchorElement) => {
 
             if (response && response.result) {
                 const result = response.result as ScanResult;
-                renderTooltip(result.status, result);
+                const verdict = result.verdict || result.status;
+                renderTooltip(verdict, result);
             } else {
                 renderTooltip("ERROR");
             }

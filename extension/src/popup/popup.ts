@@ -1,9 +1,6 @@
-import { pollPageAnalysis } from '../api.js';
 import { PageAnalysis, ScanResult, DomainAnalysis } from '../types.js';
 
-let currentPollTimeout: number | undefined;
 let currentScanUrl: string | undefined;
-let currentPollUuid: string | undefined;
 
 const ICONS = {
     safe: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg>`,
@@ -35,8 +32,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const paRowEl = document.getElementById('pa-row');
     const paIconEl = document.getElementById('pa-icon');
     const paStatusEl = document.getElementById('pa-status');
-
-    const phishingIconEl = document.getElementById('phishing-icon');
     
     // Details
     const detailsSectionEl = document.getElementById('details-section');
@@ -44,11 +39,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const detailsContentEl = document.getElementById('details-content');
     const domainDetailsEl = document.getElementById('domain-details');
     const paDetailsEl = document.getElementById('page-analysis-details');
-
-    if (phishingIconEl) {
-        phishingIconEl.innerHTML = ICONS.unknown;
-        phishingIconEl.className = 'provider-icon icon-unknown';
-    }
 
     if (detailsToggleEl && detailsSectionEl && detailsContentEl) {
         detailsToggleEl.addEventListener('click', () => {
@@ -73,41 +63,24 @@ document.addEventListener('DOMContentLoaded', () => {
     const updateOverallStatus = (scan: ScanResult) => {
         if (!overallCardEl || !overallValueEl) return;
         
-        let isMalicious = false;
-        let isSuspicious = false;
-        let isScanning = false;
-        let isError = false;
-
-        // Check URL Rep
-        if (scan.status === 'MALICIOUS') isMalicious = true;
-        if (scan.status === 'ERROR') isError = true;
-        
-        // Check Domain Analysis
-        if (scan.domainAnalysis) {
-            if (scan.domainAnalysis.status === 'MALICIOUS') isMalicious = true;
-            if (scan.domainAnalysis.status === 'SUSPICIOUS') isSuspicious = true;
-            if (scan.domainAnalysis.status === 'ERROR') isError = true;
-        }
-
-        // Check Page Analysis
-        if (scan.pageAnalysis) {
-            if (scan.pageAnalysis.status === 'submitting' || scan.pageAnalysis.status === 'scanning') isScanning = true;
-        }
-
-        // Reset classes
         overallCardEl.className = 'overall-status-card';
         
-        if (isMalicious) {
+        const verdict = scan.verdict || "UNKNOWN";
+        
+        if (verdict === 'MALICIOUS') {
             overallValueEl.textContent = 'DANGEROUS';
             overallCardEl.classList.add('card-threat');
-        } else if (isSuspicious) {
+        } else if (verdict === 'SUSPICIOUS') {
             overallValueEl.textContent = 'SUSPICIOUS';
-            overallCardEl.classList.add('card-error'); // Using yellow/orange color for suspicious
-        } else if (isScanning) {
+            overallCardEl.classList.add('card-error'); 
+        } else if (verdict === 'SCANNING') {
             overallValueEl.textContent = 'SCANNING...';
             overallCardEl.classList.add('card-scanning');
-        } else if (isError) {
+        } else if (verdict === 'ERROR') {
             overallValueEl.textContent = 'ERROR / INCOMPLETE';
+            overallCardEl.classList.add('card-unknown');
+        } else if (verdict === 'UNKNOWN') {
+            overallValueEl.textContent = 'UNVERIFIED';
             overallCardEl.classList.add('card-unknown');
         } else {
             overallValueEl.textContent = 'SAFE';
@@ -164,7 +137,6 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // SAFE case
         domainIconEl.innerHTML = ICONS.safe;
         domainIconEl.className = 'provider-icon icon-safe';
         domainStatusEl.textContent = 'SAFE';
@@ -203,7 +175,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (pa.status === 'complete') {
-            // CRITICAL FIX: "Complete" != "Safe"
             paIconEl.innerHTML = ICONS.analyzed;
             paIconEl.className = 'provider-icon icon-analyzed';
             paStatusEl.textContent = 'ANALYZED';
@@ -239,63 +210,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    const startPolling = (uuid: string, forUrl: string) => {
-        if (currentPollTimeout) {
-            clearTimeout(currentPollTimeout);
-        }
-
-        let errorCount = 0;
-        const maxErrors = 3;
-
-        const poll = async () => {
-            if (currentScanUrl !== forUrl || currentPollUuid !== uuid) return;
-
-            try {
-                const updatedPa = await pollPageAnalysis(uuid);
-
-                if (currentScanUrl !== forUrl || currentPollUuid !== uuid) return;
-
-                errorCount = 0; // reset on success
-                
-                // Get fresh state to do full render so overall status stays correct
-                chrome.storage.local.get(['lastScan'], (res: { lastScan?: ScanResult }) => {
-                    if (res.lastScan && res.lastScan.url === forUrl) {
-                        res.lastScan.pageAnalysis = updatedPa;
-                        renderPageAnalysis(updatedPa);
-                        updateOverallStatus(res.lastScan);
-                        chrome.storage.local.set({ lastScan: res.lastScan });
-                    }
-                });
-
-                if (updatedPa.status === 'submitting' || updatedPa.status === 'scanning') {
-                    currentPollTimeout = window.setTimeout(poll, 2500);
-                } else {
-                    currentPollUuid = undefined; // Terminal state reached
-                }
-            } catch (err) {
-                console.error("Polling error", err);
-                errorCount++;
-                if (errorCount >= maxErrors) {
-                    renderPageAnalysis({ status: 'failed', uuid } as PageAnalysis);
-                    currentPollUuid = undefined;
-                    
-                    // Force update overall
-                    chrome.storage.local.get(['lastScan'], (res: { lastScan?: ScanResult }) => {
-                        if (res.lastScan && res.lastScan.url === forUrl) {
-                            res.lastScan.pageAnalysis = { status: 'failed', uuid } as PageAnalysis;
-                            updateOverallStatus(res.lastScan);
-                        }
-                    });
-
-                } else {
-                    currentPollTimeout = window.setTimeout(poll, 2500);
-                }
-            }
-        };
-
-        currentPollTimeout = window.setTimeout(poll, 2500);
-    };
-
     const updateUI = (scan: ScanResult | undefined) => {
         if (!urlRepStatusEl || !urlRepIconEl || !emptyStateEl || !scanContentEl || !detailsSectionEl) return;
 
@@ -308,10 +222,8 @@ document.addEventListener('DOMContentLoaded', () => {
         emptyStateEl.style.display = 'none';
         scanContentEl.style.display = 'block';
         
-        // Hide details by default until proven otherwise
         detailsSectionEl.style.display = 'none';
 
-        // URL Reputation
         if (scan.status === 'SAFE') {
             urlRepStatusEl.textContent = 'SAFE';
             urlRepStatusEl.className = 'provider-status status-safe';
@@ -339,36 +251,39 @@ document.addEventListener('DOMContentLoaded', () => {
             urlRepIconEl.className = 'provider-icon icon-scanning';
         }
 
-        // Domain Analysis
         renderDomainAnalysis(scan.domainAnalysis);
-
-        // Page Analysis Logic
+        
         if (scan.url !== currentScanUrl) {
-            clearTimeout(currentPollTimeout);
-            currentPollTimeout = undefined;
             currentScanUrl = scan.url;
-            currentPollUuid = undefined;
         }
 
         renderPageAnalysis(scan.pageAnalysis);
-
-        // Compute overall status last
         updateOverallStatus(scan);
-
-        if (scan.pageAnalysis && scan.pageAnalysis.uuid && scan.pageAnalysis.uuid !== currentPollUuid && (scan.pageAnalysis.status === 'submitting' || scan.pageAnalysis.status === 'scanning')) {
-            currentPollUuid = scan.pageAnalysis.uuid;
-            startPolling(scan.pageAnalysis.uuid, scan.url);
-        }
     };
 
-    if (chrome && chrome.storage && chrome.storage.local) {
-        chrome.storage.local.get(['lastScan'], (result: { lastScan?: ScanResult }) => {
-            updateUI(result.lastScan);
+    if (chrome && chrome.tabs) {
+        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+            const url = tabs[0]?.url;
+            if (url && (url.startsWith('http://') || url.startsWith('https://'))) {
+                currentScanUrl = url;
+                chrome.runtime.sendMessage({ type: "SCAN_URL", url }, (response) => {
+                    if (response && response.result) {
+                        updateUI(response.result);
+                    }
+                });
+            } else {
+                updateUI(undefined);
+            }
         });
+    }
 
+    if (chrome && chrome.storage && chrome.storage.local) {
         chrome.storage.onChanged.addListener((changes, area) => {
             if (area === 'local' && changes.lastScan && changes.lastScan.newValue) {
-                updateUI(changes.lastScan.newValue as ScanResult);
+                const updatedScan = changes.lastScan.newValue as ScanResult;
+                if (updatedScan.url === currentScanUrl) {
+                    updateUI(updatedScan);
+                }
             }
         });
     }
