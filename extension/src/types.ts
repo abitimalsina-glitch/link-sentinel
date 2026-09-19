@@ -40,6 +40,17 @@ export interface DomainAnalysis {
     relatedMalware?: string[];
 }
 
+export interface VirusTotalAnalysis {
+    status: "found" | "not_found" | "scanning" | "rate_limited" | "unauthorized" | "forbidden" | "error";
+    malicious?: number;
+    suspicious?: number;
+    harmless?: number;
+    undetected?: number;
+    timeout?: number;
+    lastAnalysisDate?: number;
+    analysisId?: string;
+}
+
 export interface ScanResult {
     url: string;
     status: ScanStatus;
@@ -47,4 +58,5 @@ export interface ScanResult {
     threats?: string[];
     pageAnalysis?: PageAnalysis;
     domainAnalysis?: DomainAnalysis;
+    virusTotalAnalysis?: VirusTotalAnalysis;
 }

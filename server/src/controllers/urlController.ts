@@ -2,8 +2,9 @@ import {Request, Response} from 'express';
 import { isValidUrlArray } from '../validation/urlValidation.js';
 import { scanUrlsWithApi } from "../services/phishing-api.js";
 import { submitForAnalysis, getAnalysisResult } from "../services/urlscan-api.js";
-import { ScanResult, PageAnalysis, DomainAnalysis } from '../types.js';
+import { ScanResult, PageAnalysis, DomainAnalysis, VirusTotalAnalysis } from '../types.js';
 import { analyzeDomain } from '../services/otx-api.js';
+import { getVirusTotalReport } from '../services/virustotal-api.js';
 
 export const scanUrls = async (req: Request, res: Response) => {
     const { urls } = req.body;
@@ -22,10 +23,13 @@ export const scanUrls = async (req: Request, res: Response) => {
         const pageAnalysisPromises = urls.map(url => submitForAnalysis(url));
         // Execute OTX domain analysis for all URLs concurrently
         const domainAnalysisPromises = urls.map(url => analyzeDomain(url));
+        // Execute VirusTotal domain analysis for all URLs concurrently
+        const virusTotalPromises = urls.map(url => getVirusTotalReport(url));
 
-        const [pageAnalyses, domainAnalyses] = await Promise.all([
+        const [pageAnalyses, domainAnalyses, virusTotalAnalyses] = await Promise.all([
             Promise.all(pageAnalysisPromises),
-            Promise.all(domainAnalysisPromises)
+            Promise.all(domainAnalysisPromises),
+            Promise.all(virusTotalPromises)
         ]);
 
         // Merge results
@@ -33,7 +37,8 @@ export const scanUrls = async (req: Request, res: Response) => {
             return {
                 ...result,
                 pageAnalysis: pageAnalyses[index] as PageAnalysis,
-                domainAnalysis: domainAnalyses[index] as DomainAnalysis
+                domainAnalysis: domainAnalyses[index] as DomainAnalysis,
+                virusTotalAnalysis: virusTotalAnalyses[index] as VirusTotalAnalysis
             };
         });
 
