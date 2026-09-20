@@ -10,15 +10,15 @@
 
 <body>
     <div class="app-container" id="app-container">
-        <div class="empty-state" id="empty-state" style="display: none;">
+        <div class="empty-state" id="empty-state" style="display: flex;">
             <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="11" cy="11" r="8"></circle>
                 <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
             </svg>
-            <div class="empty-text">Hover over a link to scan it.</div>
+            <div class="empty-text">READY TO SCAN<br><br>Hover over a link to begin analysis.</div>
         </div>
 
-        <div id="scan-content">
+        <div id="scan-content" style="display: none;">
             <header class="header">
                 <div class="logo-area">
                     <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

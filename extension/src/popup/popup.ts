@@ -332,16 +332,12 @@ document.addEventListener('DOMContentLoaded', () => {
         updateOverallStatus(scan);
     };
 
-    if (chrome && chrome.tabs) {
-        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-            const url = tabs[0]?.url;
-            if (url && (url.startsWith('http://') || url.startsWith('https://'))) {
-                currentScanUrl = url;
-                chrome.runtime.sendMessage({ type: "SCAN_URL", url }, (response) => {
-                    if (response && response.result) {
-                        updateUI(response.result);
-                    }
-                });
+    if (chrome && chrome.storage && chrome.storage.local) {
+        chrome.storage.local.get('lastScan', (data) => {
+            if (data && data.lastScan) {
+                const scan = data.lastScan as ScanResult;
+                currentScanUrl = scan.url;
+                updateUI(scan);
             } else {
                 updateUI(undefined);
             }
