@@ -1,6 +1,6 @@
 import {Request, Response} from 'express';
 import { isValidUrlArray } from '../validation/urlValidation.js';
-import { scanUrlsWithApi } from "../services/phishing-api.js";
+import { scanUrlsWithApi } from "../services/google-safe-browsing-api.js";
 import { submitForAnalysis, getAnalysisResult } from "../services/urlscan-api.js";
 import { ScanResult, PageAnalysis, DomainAnalysis, VirusTotalAnalysis } from '../types.js';
 import { analyzeDomain } from '../services/otx-api.js';
