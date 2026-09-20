@@ -33,12 +33,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const paIconEl = document.getElementById('pa-icon');
     const paStatusEl = document.getElementById('pa-status');
     
+    const vtRowEl = document.getElementById('vt-row');
+    const vtIconEl = document.getElementById('vt-icon');
+    const vtStatusEl = document.getElementById('vt-status');
+
     // Details
     const detailsSectionEl = document.getElementById('details-section');
     const detailsToggleEl = document.getElementById('details-toggle');
     const detailsContentEl = document.getElementById('details-content');
     const domainDetailsEl = document.getElementById('domain-details');
     const paDetailsEl = document.getElementById('page-analysis-details');
+    const vtDetailsEl = document.getElementById('vt-details');
 
     if (detailsToggleEl && detailsSectionEl && detailsContentEl) {
         detailsToggleEl.addEventListener('click', () => {
@@ -210,6 +215,71 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    const renderVirusTotalAnalysis = (vt: any) => {
+        if (!vtRowEl || !vtIconEl || !vtStatusEl || !vtDetailsEl || !detailsSectionEl) return;
+
+        vtDetailsEl.innerHTML = '';
+        vtDetailsEl.style.display = 'none';
+        vtRowEl.classList.remove('inactive');
+
+        if (!vt || vt.status === 'not_found') {
+            vtIconEl.innerHTML = ICONS.unknown;
+            vtIconEl.className = 'provider-icon icon-unknown';
+            vtStatusEl.textContent = 'NOT FOUND';
+            vtStatusEl.className = 'provider-status status-unknown';
+            return;
+        }
+
+        if (vt.status === 'scanning') {
+            vtIconEl.innerHTML = ICONS.scanning;
+            vtIconEl.className = 'provider-icon icon-scanning';
+            vtStatusEl.textContent = 'SCANNING';
+            vtStatusEl.className = 'provider-status status-scanning';
+            return;
+        }
+
+        if (vt.status === 'rate_limited') {
+            vtIconEl.innerHTML = ICONS.error;
+            vtIconEl.className = 'provider-icon icon-error';
+            vtStatusEl.textContent = 'UNAVAILABLE';
+            vtStatusEl.className = 'provider-status status-error';
+            return;
+        }
+
+        if (vt.status === 'error' || vt.status === 'unauthorized' || vt.status === 'forbidden') {
+            vtIconEl.innerHTML = ICONS.error;
+            vtIconEl.className = 'provider-icon icon-error';
+            vtStatusEl.textContent = 'ERROR';
+            vtStatusEl.className = 'provider-status status-error';
+            return;
+        }
+
+        if (vt.status === 'found') {
+            const hasThreats = (vt.malicious && vt.malicious > 0) || (vt.suspicious && vt.suspicious > 0);
+            
+            vtIconEl.innerHTML = hasThreats ? ICONS.threat : ICONS.safe;
+            vtIconEl.className = `provider-icon ${hasThreats ? 'icon-threat' : 'icon-safe'}`;
+            vtStatusEl.textContent = hasThreats ? 'THREATS DETECTED' : '0 DETECTIONS';
+            vtStatusEl.className = `provider-status ${hasThreats ? 'status-threat' : 'status-safe'}`;
+            
+            detailsSectionEl.style.display = 'block';
+            vtDetailsEl.style.display = 'block';
+
+            let html = '<div class="pa-results">';
+            html += `
+                <div class="pa-section">
+                    <div class="pa-label">VIRUSTOTAL STATISTICS</div>
+                    <div class="pa-row"><span class="pa-key">Malicious</span> <span class="pa-value">${escapeHtml(vt.malicious)}</span></div>
+                    <div class="pa-row"><span class="pa-key">Suspicious</span> <span class="pa-value">${escapeHtml(vt.suspicious)}</span></div>
+                    <div class="pa-row"><span class="pa-key">Harmless</span> <span class="pa-value">${escapeHtml(vt.harmless)}</span></div>
+                    <div class="pa-row"><span class="pa-key">Undetected</span> <span class="pa-value">${escapeHtml(vt.undetected)}</span></div>
+                </div>
+            `;
+            html += '</div>';
+            vtDetailsEl.innerHTML = html;
+        }
+    };
+
     const updateUI = (scan: ScanResult | undefined) => {
         if (!urlRepStatusEl || !urlRepIconEl || !emptyStateEl || !scanContentEl || !detailsSectionEl) return;
 
@@ -258,6 +328,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         renderPageAnalysis(scan.pageAnalysis);
+        renderVirusTotalAnalysis(scan.virusTotalAnalysis);
         updateOverallStatus(scan);
     };
 

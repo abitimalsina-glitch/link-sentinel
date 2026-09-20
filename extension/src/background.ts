@@ -145,6 +145,7 @@ function updateStorage(result: ScanResult) {
             threats: result.threats,
             domainAnalysis: result.domainAnalysis,
             pageAnalysis: result.pageAnalysis,
+            virusTotalAnalysis: result.virusTotalAnalysis,
             timestamp: Date.now()
         }
     });
