@@ -273,6 +273,24 @@ const renderTooltip = (state: "CHECKING" | "SAFE" | "SUSPICIOUS" | "MALICIOUS" |
     }
 };
 
+let isEnabled = true;
+
+chrome.storage.local.get(['linkSentinelEnabled'], (result) => {
+    if (result.linkSentinelEnabled !== undefined) {
+        isEnabled = result.linkSentinelEnabled as boolean;
+    }
+});
+
+chrome.storage.onChanged.addListener((changes, area) => {
+    if (area === 'local' && changes.linkSentinelEnabled !== undefined) {
+        isEnabled = changes.linkSentinelEnabled.newValue as boolean;
+        if (!isEnabled) {
+            hideTooltip();
+            currentHoveredUrl = null;
+        }
+    }
+});
+
 startHoverScanner((url: string, anchor: HTMLAnchorElement) => {
     console.log(`[Link-Sentinel] Hover detected: ${url}`);
     currentHoveredUrl = url;
@@ -315,3 +333,4 @@ startHoverScanner((url: string, anchor: HTMLAnchorElement) => {
     currentHoveredUrl = null;
     hideTooltip();
 });
+}, () => isEnabled);

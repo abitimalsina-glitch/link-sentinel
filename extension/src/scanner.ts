@@ -4,10 +4,13 @@ type ScanCallback = (url: string, anchor: HTMLAnchorElement) => void;
 type LeaveCallback = (anchor: HTMLAnchorElement) => void;
 
 export const startHoverScanner = (onScan: ScanCallback, onLeave: LeaveCallback) => {
+export const startHoverScanner = (onScan: ScanCallback, onLeave: LeaveCallback, isEnabled: () => boolean = () => true) => {
     let hoverTimeout: ReturnType<typeof setTimeout> | null = null;
     let currentAnchor: HTMLAnchorElement | null = null;
 
     document.addEventListener("mouseover", (event) => {
+        if (!isEnabled()) return;
+
         const path = event.composedPath();
         const anchor = path.find((node: any) => node.tagName && node.tagName.toLowerCase() === 'a') as HTMLAnchorElement | undefined;
 
@@ -25,6 +28,7 @@ export const startHoverScanner = (onScan: ScanCallback, onLeave: LeaveCallback) 
         }
 
         hoverTimeout = setTimeout(() => {
+            if (!isEnabled()) return;
             if (currentAnchor === anchor) {
                 onScan(url, anchor);
             }
@@ -32,6 +36,8 @@ export const startHoverScanner = (onScan: ScanCallback, onLeave: LeaveCallback) 
     });
 
     document.addEventListener("mouseout", (event) => {
+        if (!isEnabled()) return;
+
         const path = event.composedPath();
         const anchor = path.find((node: any) => node.tagName && node.tagName.toLowerCase() === 'a') as HTMLAnchorElement | undefined;
 

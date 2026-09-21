@@ -58,6 +58,43 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    const enableToggleEl = document.getElementById('enable-toggle') as HTMLInputElement | null;
+
+    if (enableToggleEl && chrome && chrome.storage && chrome.storage.local) {
+        chrome.storage.local.get(['linkSentinelEnabled'], (result) => {
+            if (result.linkSentinelEnabled !== undefined) {
+                enableToggleEl.checked = result.linkSentinelEnabled as boolean;
+            } else {
+                enableToggleEl.checked = true; // default to ON
+            }
+        });
+
+        enableToggleEl.addEventListener('change', (e) => {
+            const target = e.target as HTMLInputElement;
+            chrome.storage.local.set({ linkSentinelEnabled: target.checked });
+            
+            if (!target.checked) {
+                // When disabled, revert to empty state
+                updateUI(undefined);
+            } else {
+                // When enabled, fetch last scan if any
+                chrome.storage.local.get('lastScan', (data) => {
+                    if (data && data.lastScan) {
+                        updateUI(data.lastScan as ScanResult);
+                    }
+                });
+            }
+        });
+
+        chrome.storage.onChanged.addListener((changes, area) => {
+            if (area === 'local' && changes.linkSentinelEnabled !== undefined) {
+                if (enableToggleEl.checked !== (changes.linkSentinelEnabled.newValue as boolean)) {
+                    enableToggleEl.checked = changes.linkSentinelEnabled.newValue as boolean;
+                }
+            }
+        });
+    }
+
     const escapeHtml = (str: string | number | boolean | undefined | null): string => {
         if (str === null || str === undefined) return '';
         const div = document.createElement('div');
