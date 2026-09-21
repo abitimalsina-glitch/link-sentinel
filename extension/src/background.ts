@@ -1,6 +1,5 @@
 import { scanUrl, pollPageAnalysis } from "./api.js";
 import { ScanResult, PageAnalysis } from "./types.js";
-import { calculateVerdict } from "./verdict.js";
 
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
@@ -34,7 +33,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             existingPromise.then(result => {
                 sendResponse({ result });
             }).catch(() => {
-                sendResponse({ result: { url, status: "ERROR", verdict: "ERROR" } });
+                sendResponse({ result: { url, status: "ERROR" } });
             });
             return true;
         }
@@ -43,7 +42,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
         // Perform network request asynchronously
         const scanPromise = scanUrl(url).then((result) => {
-            result.verdict = calculateVerdict(result);
             cache.set(url, { result, timestamp: Date.now() });
             
             // Check if we need to poll URLScan
@@ -56,7 +54,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             return result;
         }).catch((err) => {
             console.error("[Link-Sentinel] Scan failed", err);
-            const errorResult: ScanResult = { url, status: "ERROR", verdict: "ERROR" };
+            const errorResult: ScanResult = { url, status: "ERROR" };
             updateStorage(errorResult);
             return errorResult;
         }).finally(() => {
@@ -89,7 +87,6 @@ function startPolling(url: string, uuid: string) {
             const cached = cache.get(url);
             if (cached) {
                 cached.result.pageAnalysis = { status: 'timeout', uuid } as PageAnalysis;
-                cached.result.verdict = calculateVerdict(cached.result);
                 cache.set(url, { result: cached.result, timestamp: Date.now() });
                 updateStorage(cached.result);
             }
@@ -105,7 +102,6 @@ function startPolling(url: string, uuid: string) {
             const cached = cache.get(url);
             if (cached) {
                 cached.result.pageAnalysis = updatedPa;
-                cached.result.verdict = calculateVerdict(cached.result);
                 cache.set(url, { result: cached.result, timestamp: Date.now() });
                 updateStorage(cached.result);
             }
@@ -122,7 +118,6 @@ function startPolling(url: string, uuid: string) {
                 const cached = cache.get(url);
                 if (cached) {
                     cached.result.pageAnalysis = { status: 'failed', uuid } as PageAnalysis;
-                    cached.result.verdict = calculateVerdict(cached.result);
                     cache.set(url, { result: cached.result, timestamp: Date.now() });
                     updateStorage(cached.result);
                 }
@@ -141,7 +136,6 @@ function updateStorage(result: ScanResult) {
         lastScan: {
             url: result.url,
             status: result.status,
-            verdict: result.verdict,
             threats: result.threats,
             domainAnalysis: result.domainAnalysis,
             pageAnalysis: result.pageAnalysis,

@@ -3,7 +3,6 @@ import { isHttpUrl } from "./url";
 type ScanCallback = (url: string, anchor: HTMLAnchorElement) => void;
 type LeaveCallback = (anchor: HTMLAnchorElement) => void;
 
-export const startHoverScanner = (onScan: ScanCallback, onLeave: LeaveCallback) => {
 export const startHoverScanner = (onScan: ScanCallback, onLeave: LeaveCallback, isEnabled: () => boolean = () => true) => {
     let hoverTimeout: ReturnType<typeof setTimeout> | null = null;
     let currentAnchor: HTMLAnchorElement | null = null;

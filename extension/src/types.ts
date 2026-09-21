@@ -1,7 +1,5 @@
 export type ScanStatus = "SAFE" | "MALICIOUS" | "UNKNOWN" | "ERROR";
 
-export type Verdict = "SAFE" | "SUSPICIOUS" | "MALICIOUS" | "UNKNOWN" | "ERROR" | "SCANNING";
-
 export interface PageAnalysis {
     status: "not_analyzed" | "submitting" | "scanning" | "complete" | "failed" | "timeout" | "rate_limited";
     uuid?: string;
@@ -54,7 +52,6 @@ export interface VirusTotalAnalysis {
 export interface ScanResult {
     url: string;
     status: ScanStatus;
-    verdict?: Verdict;
     threats?: string[];
     pageAnalysis?: PageAnalysis;
     domainAnalysis?: DomainAnalysis;

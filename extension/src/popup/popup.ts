@@ -16,9 +16,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const emptyStateEl = document.getElementById('empty-state');
     const scanContentEl = document.getElementById('scan-content');
     
-    // Overall
-    const overallCardEl = document.getElementById('overall-status-card');
-    const overallValueEl = document.getElementById('overall-value');
 
     // Modules
     const urlRepIconEl = document.getElementById('url-rep-icon');
@@ -65,7 +62,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (result.linkSentinelEnabled !== undefined) {
                 enableToggleEl.checked = result.linkSentinelEnabled as boolean;
             } else {
-                enableToggleEl.checked = true; // default to ON
+                enableToggleEl.checked = false; // default to OFF
             }
         });
 
@@ -100,34 +97,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const div = document.createElement('div');
         div.textContent = String(str);
         return div.innerHTML;
-    };
-
-    const updateOverallStatus = (scan: ScanResult) => {
-        if (!overallCardEl || !overallValueEl) return;
-        
-        overallCardEl.className = 'overall-status-card';
-        
-        const verdict = scan.verdict || "UNKNOWN";
-        
-        if (verdict === 'MALICIOUS') {
-            overallValueEl.textContent = 'DANGEROUS';
-            overallCardEl.classList.add('card-threat');
-        } else if (verdict === 'SUSPICIOUS') {
-            overallValueEl.textContent = 'SUSPICIOUS';
-            overallCardEl.classList.add('card-error'); 
-        } else if (verdict === 'SCANNING') {
-            overallValueEl.textContent = 'SCANNING...';
-            overallCardEl.classList.add('card-scanning');
-        } else if (verdict === 'ERROR') {
-            overallValueEl.textContent = 'ERROR / INCOMPLETE';
-            overallCardEl.classList.add('card-unknown');
-        } else if (verdict === 'UNKNOWN') {
-            overallValueEl.textContent = 'UNVERIFIED';
-            overallCardEl.classList.add('card-unknown');
-        } else {
-            overallValueEl.textContent = 'SAFE';
-            overallCardEl.classList.add('card-safe');
-        }
     };
 
     const renderDomainAnalysis = (da: DomainAnalysis | undefined) => {
@@ -366,7 +335,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         renderPageAnalysis(scan.pageAnalysis);
         renderVirusTotalAnalysis(scan.virusTotalAnalysis);
-        updateOverallStatus(scan);
+        
     };
 
     if (chrome && chrome.storage && chrome.storage.local) {

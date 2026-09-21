@@ -273,11 +273,13 @@ const renderTooltip = (state: "CHECKING" | "SAFE" | "SUSPICIOUS" | "MALICIOUS" |
     }
 };
 
-let isEnabled = true;
+let isEnabled = false;
 
 chrome.storage.local.get(['linkSentinelEnabled'], (result) => {
     if (result.linkSentinelEnabled !== undefined) {
         isEnabled = result.linkSentinelEnabled as boolean;
+    } else {
+        isEnabled = false;
     }
 });
 
@@ -316,7 +318,7 @@ startHoverScanner((url: string, anchor: HTMLAnchorElement) => {
 
             if (response && response.result) {
                 const result = response.result as ScanResult;
-                const verdict = result.verdict || result.status;
+                const verdict = result.status;
                 renderTooltip(verdict, result);
             } else {
                 renderTooltip("ERROR");
@@ -332,5 +334,4 @@ startHoverScanner((url: string, anchor: HTMLAnchorElement) => {
 }, (anchor: HTMLAnchorElement) => {
     currentHoveredUrl = null;
     hideTooltip();
-});
 }, () => isEnabled);

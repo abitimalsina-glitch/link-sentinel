@@ -89,60 +89,6 @@ body {
 }
 
 /* Overall Status */
-.overall-status-card {
-    background: var(--bg-card);
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    padding: 12px 16px;
-    margin-bottom: 20px;
-    transition: all 0.2s ease;
-}
-
-.overall-status-card.card-safe {
-    background: var(--color-safe-bg);
-    border-color: var(--color-safe-border);
-}
-
-.overall-status-card.card-threat {
-    background: var(--color-threat-bg);
-    border-color: var(--color-threat-border);
-}
-
-.overall-status-card.card-error {
-    background: var(--color-error-bg);
-    border-color: var(--color-error-border);
-}
-
-.overall-status-card.card-scanning {
-    background: var(--color-scanning-bg);
-    border-color: var(--color-scanning-border);
-}
-
-.overall-status-card.card-unknown {
-    background: var(--color-unknown-bg);
-    border-color: var(--color-unknown-border);
-}
-
-.overall-label {
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    color: var(--text-secondary);
-    margin-bottom: 6px;
-    font-weight: 600;
-}
-
-.overall-value {
-    font-size: 15px;
-    font-weight: 700;
-}
-
-.card-safe .overall-value { color: var(--color-safe); }
-.card-threat .overall-value { color: var(--color-threat); }
-.card-error .overall-value { color: var(--color-error); }
-.card-scanning .overall-value { color: var(--color-scanning); }
-.card-unknown .overall-value { color: var(--color-unknown); }
-
 /* Modules */
 .modules-container {
     display: flex;
