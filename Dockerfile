@@ -22,6 +22,9 @@ COPY server/ ./
 # This creates the dist/ directory required by the start script.
 RUN npm run build
 
+# Document that the application listens on port 3000 inside the container.
+EXPOSE 3000
+
 # Define the default command that runs when the container starts.
 # "npm start" executes the start script from package.json,
 # which runs: node dist/server.js

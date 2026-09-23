@@ -25,7 +25,7 @@ Link-Sentinel operates directly within the browser using a hover-based mechanism
 4. **Concurrent Lookups**: The backend concurrently queries Google Safe Browsing, AlienVault OTX, URLScan.io, and VirusTotal.
 5. **Real-time Feedback**: A non-intrusive tooltip appears near the cursor displaying the safety status. If a provider is still analyzing (e.g., URLScan), the background script polls the backend until complete, updating the tooltip and popup live.
 6. **Popup UI**: Clicking the extension icon displays the detailed security results of the most recently hovered link.
-```
+
 
 ## Setup & Installation
 
@@ -38,10 +38,11 @@ cd server
 npm install
 ```
 
-Create a `.env` file in the `server/` directory and add your API keys:
+Create a `.env` file inside the `server/` directory and add your API keys:
 
 ```env
 PORT=3000
+
 GOOGLE_SAFE_BROWSING_API_KEY=your_api_key_here
 URLSCAN_API_KEY=your_api_key_here
 OTX_API_KEY=your_api_key_here
@@ -53,9 +54,98 @@ Start the development server:
 ```bash
 npm run dev
 ```
-*(Alternatively, use `npm run build` followed by `npm start` for production).*
 
-### 2. Extension Setup
+For a production build, use:
+
+```bash
+npm run build
+npm start
+```
+
+### 2. Running the Backend with Docker
+
+Link-Sentinel also includes a `Dockerfile` at the project root for running the backend in an isolated Node.js container.
+
+The Docker image:
+
+* Installs the backend dependencies
+* Copies the backend source code into the container
+* Compiles the TypeScript code
+* Exposes port `3000`
+* Starts the compiled Express server using `npm start`
+
+#### Create the `.env` file
+
+The Docker container still needs the API keys used by the security providers.
+
+Create the file:
+
+```text
+server/.env
+```
+
+with:
+
+```env
+PORT=3000
+
+GOOGLE_SAFE_BROWSING_API_KEY=your_api_key_here
+URLSCAN_API_KEY=your_api_key_here
+OTX_API_KEY=your_api_key_here
+VIRUSTOTAL_API_KEY=your_api_key_here
+```
+
+Make sure `.env` is included in `.gitignore` so API keys are never committed to the repository.
+
+#### Build the Docker image
+
+From the **Link-Sentinel project root**, where the `Dockerfile` is located:
+
+```bash
+docker build -t link-sentinel-server .
+```
+
+The `.` tells Docker to use the current directory as the build context.
+
+#### Run the container
+
+Because the `.env` file is located inside `server/`, pass it to the container when starting it:
+
+```bash
+docker run --rm --env-file server/.env -p 3000:3000 link-sentinel-server
+```
+
+The `-p 3000:3000` option maps port `3000` on the host machine to port `3000` inside the container.
+
+Once the container is running, the backend is available at:
+
+```text
+http://localhost:3000
+```
+
+The extension communicates with this local backend through the API endpoints described below.
+
+To stop the container, press:
+
+```text
+Ctrl + C
+```
+
+#### Rebuilding after backend changes
+
+If the backend source code or Dockerfile changes, rebuild the image:
+
+```bash
+docker build -t link-sentinel-server .
+```
+
+Then run the updated container again:
+
+```bash
+docker run --rm --env-file server/.env -p 3000:3000 link-sentinel-server
+```
+
+### 3. Extension Setup
 
 Navigate to the `extension/` directory:
 
@@ -68,9 +158,53 @@ npm run build
 This compiles the TypeScript files and bundles the content and background scripts using Vite into the `extension/dist/` folder.
 
 To load the extension in Firefox:
+
 1. Open Firefox and navigate to `about:debugging#/runtime/this-firefox`.
 2. Click **Load Temporary Add-on...**.
 3. Select the `extension/manifest.json` file.
+
+### Running Link-Sentinel with Docker
+
+The complete Docker-based development flow is:
+
+```bash
+# From the Link-Sentinel project root
+
+docker build -t link-sentinel-server .
+
+docker run --rm --env-file server/.env -p 3000:3000 link-sentinel-server
+```
+
+Then build and load the Firefox extension separately:
+
+```bash
+cd extension
+npm install
+npm run build
+```
+
+The resulting architecture is:
+
+```text
+Firefox Extension
+       |
+       | HTTP requests
+       v
+localhost:3000
+       |
+       v
+Docker Container
+       |
+       v
+Express Backend
+       |
+       +---- Google Safe Browsing
+       +---- AlienVault OTX
+       +---- URLScan.io
+       +---- VirusTotal
+```
+
+The backend API keys remain on the local server and are not included in the browser extension.
 
 ## API Endpoints
 
@@ -132,6 +266,7 @@ Link-Sentinel/
         │   └── virustotal-api.ts
         └── validation/
             └── urlValidation.ts # Validates incoming URL data
+```
 
 ## License
 
